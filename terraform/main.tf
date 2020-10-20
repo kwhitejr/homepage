@@ -17,13 +17,12 @@ terraform {
 }
 
 provider "aws" {
-  region = "${var.aws_region}"
+  region = var.aws_region
 }
 
 # Get manually created Route 53 Hosted Zone id
 data "aws_route53_zone" "main" {
-  name         = "${var.domain_name}"
-  private_zone = true
+  name = var.domain_name
 }
 # resource "aws_route53_zone" "main" {
 #   name    = "${var.domain_name}"
@@ -32,7 +31,7 @@ data "aws_route53_zone" "main" {
 
 # AWS S3 bucket for static hosting
 resource "aws_s3_bucket" "website" {
-  bucket = "${var.website_bucket_name}"
+  bucket = var.website_bucket_name
   acl    = "public-read"
 
   cors_rule {
@@ -72,7 +71,7 @@ resource "aws_s3_bucket" "website_redirect" {
   acl    = "public-read"
 
   website {
-    redirect_all_requests_to = "${var.website_bucket_name}"
+    redirect_all_requests_to = var.website_bucket_name
   }
 }
 
@@ -88,7 +87,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   comment             = "Managed by Terraform"
   default_root_object = "index.html"
 
-  aliases = ["${var.domain_name}"]
+  aliases = [var.domain_name]
 
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
@@ -123,20 +122,20 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 }
 
 resource "aws_route53_record" "main-a-record" {
-  zone_id = "${data.aws_route53_zone.main.zone_id}"
-  name    = "${var.domain_name}"
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = var.domain_name
   type    = "A"
   alias {
-    name                   = "${aws_s3_bucket.website.website_domain}"
-    zone_id                = "${aws_s3_bucket.website.hosted_zone_id}"
+    name                   = aws_s3_bucket.website.website_domain
+    zone_id                = aws_s3_bucket.website.hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_route53_record" "main-c-name" {
-  zone_id = "${data.aws_route53_zone.main.zone_id}"
+  zone_id = data.aws_route53_zone.main.zone_id
   name    = "www"
   type    = "CNAME"
   ttl     = "300"
-  records = ["${var.domain_name}"]
+  records = [var.domain_name]
 }
