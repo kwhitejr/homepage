@@ -22,12 +22,15 @@ provider "aws" {
 
 # Get manually created Route 53 Hosted Zone id
 data "aws_route53_zone" "main" {
-  name = var.domain_name
+  name         = var.domain_name
+  private_zone = false
 }
-# resource "aws_route53_zone" "main" {
-#   name    = "${var.domain_name}"
-#   comment = "Managed by Terraform"
-# }
+
+data "aws_acm_certificate" "certificate" {
+  domain      = var.domain_name
+  types       = ["AMAZON_ISSUED"]
+  most_recent = true
+}
 
 # AWS S3 bucket for static hosting
 resource "aws_s3_bucket" "website" {
@@ -80,14 +83,27 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name = "${aws_s3_bucket.website.bucket}.s3.amazonaws.com"
     origin_id   = "website"
+
+    custom_origin_config {
+      http_port              = "80"
+      https_port             = "443"
+      origin_protocol_policy = "match-viewer"
+      origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
+    }
   }
 
+  aliases             = [var.domain_name]
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "Managed by Terraform"
+  comment             = "kwhitejr.com CDN"
   default_root_object = "index.html"
 
-  # aliases = [var.domain_name]
+  viewer_certificate {
+    minimum_protocol_version       = "TLSv1.2_2018"
+    ssl_support_method             = "sni-only"
+    cloudfront_default_certificate = false
+    acm_certificate_arn            = data.aws_acm_certificate.certificate.certificate_arn
+  }
 
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
@@ -95,7 +111,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     target_origin_id = "website"
 
     forwarded_values {
-      query_string = false
+      query_string = true
+      headers      = ["*"]
 
       cookies {
         forward = "none"
@@ -115,19 +132,16 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       restriction_type = "none"
     }
   }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
 }
 
 resource "aws_route53_record" "main-a-record" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain_name
   type    = "A"
+  name    = var.domain_name
+  zone_id = data.aws_route53_zone.main.zone_id
+
   alias {
-    name                   = aws_s3_bucket.website.website_domain
-    zone_id                = aws_s3_bucket.website.hosted_zone_id
+    name                   = aws_cloudfront_distribution.s3_distribution.website_domain
+    zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -139,3 +153,11 @@ resource "aws_route53_record" "main-c-name" {
   ttl     = "300"
   records = [var.domain_name]
 }
+
+# resource "aws_route53_record" "cert_validation" {
+#   name    = "${data.aws_acm_certificate.certificate.domain_validation_options.0.resource_record_name}"
+#   type    = "${data.aws_acm_certificate.certificate.domain_validation_options.0.resource_record_type}"
+#   zone_id = "${data.aws_route53_zone.main.id}"
+#   records = ["${data.aws_acm_certificate.certificate.domain_validation_options.0.resource_record_value}"]
+#   ttl     = 60
+# }
