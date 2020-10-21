@@ -102,7 +102,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     minimum_protocol_version       = "TLSv1.2_2018"
     ssl_support_method             = "sni-only"
     cloudfront_default_certificate = false
-    acm_certificate_arn            = data.aws_acm_certificate.certificate.certificate_arn
+    acm_certificate_arn            = data.aws_acm_certificate.certificate.arn
   }
 
   default_cache_behavior {
