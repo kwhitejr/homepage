@@ -41,7 +41,6 @@ module "cloudfront-s3-cdn" {
   version = "0.35.0"
 
   name                 = local.domain_name
-  origin_bucket        = local.domain_name
   origin_force_destroy = true
   encryption_enabled   = true
 
