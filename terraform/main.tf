@@ -40,11 +40,12 @@ module "cloudfront-s3-cdn" {
   source  = "cloudposse/cloudfront-s3-cdn/aws"
   version = "0.35.0"
 
-  name               = "acme-example"
-  encryption_enabled = true
+  name                 = local.domain_name
+  origin_force_destroy = true
+  encryption_enabled   = true
 
   # DNS Settings
-  parent_zone_id      = data.aws_route53_zone.zone.id
+  parent_zone_id      = data.aws_route53_zone.main.id
   acm_certificate_arn = data.aws_acm_certificate.certificate.arn
   aliases             = [local.domain_name, "www.${local.domain_name}"]
   ipv6_enabled        = true
