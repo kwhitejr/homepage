@@ -44,7 +44,7 @@ module "cloudfront-s3-cdn" {
   encryption_enabled = true
 
   # DNS Settings
-  parent_zone_id      = data.aws_route53_zone.zone.id
+  parent_zone_id      = data.aws_route53_zone.main.id
   acm_certificate_arn = data.aws_acm_certificate.certificate.arn
   aliases             = [local.domain_name, "www.${local.domain_name}"]
   ipv6_enabled        = true
