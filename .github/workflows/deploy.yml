@@ -6,9 +6,11 @@ name: Build Gatsby Site
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
     steps:
       - uses: actions/checkout@v2
-
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -18,6 +20,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 0.13.4
+          terraform_wrapper: false
 
       - name: Install Dependencies
         run: npm install
@@ -35,15 +38,15 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init -input=false terraform/
+        run: terraform init -input=false
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate terraform/
+        run: terraform validate
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -out "planfile" terraform/
+        run: terraform plan -out "planfile"
 
       - name: Terraform Apply
         id: apply
@@ -51,4 +54,4 @@ jobs:
 
       # Finally, this is how we upload our build to our bucket
       - name: Deploy static site to S3 bucket
-        run: aws s3 sync public s3://$(terraform output s3_bucket) --delete
+        run: aws s3 sync ../public s3://$(terraform output s3_bucket) --delete
