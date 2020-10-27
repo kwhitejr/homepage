@@ -19,6 +19,7 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-duration-seconds: 1200
+          role-skip-session-tagging: true
       - uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 0.13.4
