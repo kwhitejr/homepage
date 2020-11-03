@@ -10,6 +10,20 @@ module.exports = {
   },
   plugins: [
     {
+      // Keep this plugin first: https://www.gatsbyjs.com/plugins/gatsby-plugin-material-ui/
+      resolve: 'gatsby-plugin-material-ui',
+      options: {
+        stylesProvider: {
+          injectFirst: true,
+        },
+      },
+    },
+    'gatsby-plugin-emotion',
+    'gatsby-transformer-sharp',
+    'gatsby-plugin-sharp',
+    'gatsby-plugin-feed',
+    'gatsby-plugin-react-helmet',
+    {
       resolve: 'gatsby-plugin-typography',
       options: {
         pathToConfigModule: 'src/utils/typography',
@@ -51,16 +65,12 @@ module.exports = {
         ],
       },
     },
-    'gatsby-plugin-emotion',
-    'gatsby-transformer-sharp',
-    'gatsby-plugin-sharp',
     {
       resolve: 'gatsby-plugin-google-analytics',
       options: {
         // trackingId: `ADD YOUR TRACKING ID HERE`,
       },
     },
-    'gatsby-plugin-feed',
     {
       resolve: 'gatsby-plugin-manifest',
       options: {
@@ -73,7 +83,6 @@ module.exports = {
         icon: 'content/assets/profile-pic.jpg',
       },
     },
-    'gatsby-plugin-react-helmet',
     // this (optional) plugin enables Progressive Web App + Offline functionality
     // To learn more, visit: https://gatsby.dev/offline
     // `gatsby-plugin-offline`,
