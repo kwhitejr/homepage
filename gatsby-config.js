@@ -2,8 +2,11 @@ module.exports = {
   siteMetadata: {
     title: 'kwhitejr',
     author: {
-      name: 'Kevin White',
-      summary: 'lives and works in Beaverton, Oregon building useful things.',
+      name: {
+        first: 'Kevin',
+        last: 'White',
+      },
+      summary: 'lives in Oregon brewing his coffee, walking his puppy, and slowly learning to program better.',
     },
     description: 'A programming blog and other things.',
     siteUrl: 'https://kwhitejr.com',

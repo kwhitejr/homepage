@@ -22,7 +22,10 @@ const Bio = () => {
       site {
         siteMetadata {
           author {
-            name
+            name {
+              first
+              last
+            }
             summary
           }
         }
@@ -30,26 +33,35 @@ const Bio = () => {
     }
   `);
 
-  // Set these values by editing "siteMetadata" in gatsby-config.js
   const author = data.site.siteMetadata?.author;
 
   const avatar = data?.avatar?.childImageSharp?.fixed;
 
   return (
-    <div className="bio">
+    <div css={{
+      marginTop: '20px',
+      display: 'flex',
+      flexDirection: 'row',
+      alignContent: 'flex-start',
+    }}
+    >
       {avatar && (
         <Image
           fixed={avatar}
-          alt={author?.name || ''}
+          alt={author?.name?.first || ''}
           className="bio-avatar"
           imgStyle={{
             borderRadius: '50%',
           }}
         />
       )}
-      {author?.name && (
-        <p>
-          <strong>{author.name}</strong>
+      {author?.name?.first && (
+        <p css={{
+          marginLeft: '10px',
+          verticalAlign: 'middle',
+        }}
+        >
+          <strong>{author.name.first}</strong>
           {' '}
           {author?.summary || null}
           {' '}

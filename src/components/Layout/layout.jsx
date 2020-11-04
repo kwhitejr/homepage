@@ -1,6 +1,6 @@
 import React from 'react';
 import { css } from '@emotion/core';
-import AppBar from './AppBar';
+import AppBar from '../AppBar';
 
 const Gutters = ({ children }) => (
   <div

@@ -39,7 +39,8 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   const posts = result.data.allMarkdownRemark.nodes;
 
   // Create blog posts pages
-  // But only if there's at least one markdown file found at "content/blog" (defined in gatsby-config.js)
+  // But only if there's at least one markdown file
+  // found at "content/blog" (defined in gatsby-config.js)
   // `context` is available in the template as a prop and as a variable in GraphQL
 
   if (posts.length > 0) {
@@ -91,8 +92,13 @@ exports.createSchemaCustomization = ({ actions }) => {
     }
 
     type Author {
-      name: String
+      name: Name
       summary: String
+    }
+
+    type Name {
+      first: String
+      last: String
     }
 
     type Social {
