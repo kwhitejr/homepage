@@ -39,7 +39,7 @@ const Bio = () => {
 
   return (
     <div css={{
-      marginTop: '20px',
+      marginTop: '30px',
       display: 'flex',
       flexDirection: 'row',
       alignContent: 'flex-start',

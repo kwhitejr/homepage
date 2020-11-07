@@ -1,17 +1,22 @@
 import React from 'react';
-import { css } from '@emotion/core';
+import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '../AppBar';
 
-const Gutters = ({ children }) => (
-  <div
-    css={css`
-    margin: 0 auto;
-    max-width: 700px;
-  `}
-  >
-    {children}
-  </div>
-);
+const useStyles = makeStyles((theme) => ({
+  gutter: {
+    margin: '0 auto',
+    maxWidth: '700px',
+  },
+}));
+
+const Gutters = ({ children }) => {
+  const classes = useStyles();
+  return (
+    <div className={classes.gutter}>
+      {children}
+    </div>
+  );
+};
 
 const Layout = ({ children }) => (
   <div>
@@ -24,7 +29,7 @@ const Layout = ({ children }) => (
         {new Date().getFullYear()}
         , Built with
         {' '}
-        <a href="https://www.gatsbyjs.com">Gatsby</a>
+        Gatsby
       </footer>
     </Gutters>
   </div>

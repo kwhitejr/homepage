@@ -1,6 +1,7 @@
 import Typography from 'typography';
 import fairyGatesTheme from 'typography-theme-fairy-gates';
 
+// eslint-disable-next-line no-unused-vars
 fairyGatesTheme.overrideThemeStyles = ({ rhythm }, options) => ({
   '@media only screen and (max-width:480px)': {
     main: {

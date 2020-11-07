@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { Link } from 'gatsby';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
@@ -7,10 +9,35 @@ import Menu from '@material-ui/core/Menu';
 import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import MenuIcon from '@material-ui/icons/Menu';
+import Slide from '@material-ui/core/Slide';
+import useScrollTrigger from '@material-ui/core/useScrollTrigger';
 
 import useStyles from './styles';
 
-export default function PrimarySearchAppBar() {
+function HideOnScroll(props) {
+  const { children, window } = props;
+  // Note that you normally won't need to set the window ref as useScrollTrigger
+  // will default to window.
+  // This is only being set here because the demo is in an iframe.
+  const trigger = useScrollTrigger({ target: window ? window() : undefined });
+
+  return (
+    <Slide appear={false} direction="down" in={!trigger}>
+      {children}
+    </Slide>
+  );
+}
+
+HideOnScroll.propTypes = {
+  children: PropTypes.element.isRequired,
+  /**
+   * Injected by the documentation to work in an iframe.
+   * You won't need it on your project.
+   */
+  window: PropTypes.func, // eslint-disable-line
+};
+
+export default function PrimarySearchAppBar(props) {
   const classes = useStyles();
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
 
@@ -48,8 +75,13 @@ export default function PrimarySearchAppBar() {
   );
 
   const renderTitle = (
-    <Typography color="inherit" className={classes.title} variant="h5" noWrap>
-      kwhitejr
+    <Typography className={classes.title} variant="h5" noWrap>
+      <Link
+        to="/"
+        className={classes.brandButton}
+      >
+        kwhitejr
+      </Link>
     </Typography>
   );
 
@@ -84,8 +116,8 @@ export default function PrimarySearchAppBar() {
           {renderActionsDesktop}
           {renderActionsMobile}
         </Toolbar>
+        {renderMobileMenu}
       </AppBar>
-      {renderMobileMenu}
     </div>
   );
 }

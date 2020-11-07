@@ -10,7 +10,7 @@ const useStyles = makeStyles((theme) => ({
   title: {
     fontFamily: 'Work Sans,sans-serif',
     display: 'absolute',
-    marginRight: theme.spacing(1),
+    marginLeft: theme.spacing(1),
   },
   actionsDesktop: {
     display: 'none',
@@ -27,6 +27,13 @@ const useStyles = makeStyles((theme) => ({
   button: {
     fontFamily: 'Work Sans,sans-serif',
     margin: theme.spacing(2),
+  },
+  brandButton: {
+    all: 'inherit',
+    color: 'white',
+    '&:hover': {
+      cursor: 'pointer',
+    },
   },
 }));
 

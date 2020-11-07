@@ -1,11 +1,13 @@
 const path = require('path');
 const { createFilePath } = require('gatsby-source-filesystem');
+const kebabCase = require('lodash.kebabcase');
 
 exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions;
 
   // Define a template for blog post
-  const blogPost = path.resolve('./src/templates/blog-post.jsx');
+  const postTemplate = path.resolve('./src/templates/article.jsx');
+  const tagTemplate = path.resolve('./src/templates/tag.jsx');
 
   // Get all markdown blog posts sorted by date
   const result = await graphql(
@@ -21,6 +23,7 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
             }
             frontmatter {
               title
+              tags
             }
           }
         }
@@ -38,27 +41,33 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
 
   const posts = result.data.allMarkdownRemark.nodes;
 
-  // Create blog posts pages
-  // But only if there's at least one markdown file
-  // found at "content/blog" (defined in gatsby-config.js)
-  // `context` is available in the template as a prop and as a variable in GraphQL
+  const uniqueTags = new Set();
 
-  if (posts.length > 0) {
-    posts.forEach((post, index) => {
-      const previous = index === posts.length - 1 ? null : posts[index + 1];
-      const next = index === 0 ? null : posts[index - 1];
+  // Create posts pages
+  posts.forEach((post) => {
+    // Add tags to set. C'mon bro support optional chaining already
+    post.frontmatter && post.frontmatter.tags && post.frontmatter.tags.forEach((tag) => uniqueTags.add(tag));
 
-      createPage({
-        path: post.fields.slug,
-        component: blogPost,
-        context: {
-          slug: post.fields.slug,
-          previous,
-          next,
-        },
-      });
+    createPage({
+      path: post.fields.slug,
+      component: postTemplate,
+      context: {
+        slug: post.fields.slug,
+      },
     });
-  }
+  });
+
+  // Create tags pages
+  const tags = Array.from(uniqueTags);
+  tags.forEach((tag) => {
+    createPage({
+      path: `/tags/${kebabCase(tag)}/`,
+      component: tagTemplate,
+      context: {
+        tag,
+      },
+    });
+  });
 };
 
 exports.onCreateNode = ({ node, actions, getNode }) => {
@@ -84,11 +93,10 @@ exports.createSchemaCustomization = ({ actions }) => {
   // Also explicitly define the Markdown frontmatter
   // This way the "MarkdownRemark" queries will return `null` even when no
   // blog posts are stored inside "content/blog" instead of returning an error
-  createTypes(`
+  const typeDefs = `
     type SiteSiteMetadata {
       author: Author
       siteUrl: String
-      social: Social
     }
 
     type Author {
@@ -101,23 +109,22 @@ exports.createSchemaCustomization = ({ actions }) => {
       last: String
     }
 
-    type Social {
-      twitter: String
-    }
-
     type MarkdownRemark implements Node {
       frontmatter: Frontmatter
       fields: Fields
     }
 
     type Frontmatter {
-      title: String
+      title: String!
       description: String
       date: Date @dateformat
+      tags: [String!]
     }
 
     type Fields {
       slug: String
     }
-  `);
+  `;
+
+  createTypes(typeDefs);
 };
