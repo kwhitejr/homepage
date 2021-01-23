@@ -30,19 +30,19 @@
 - The **Root** account is created for every new AWS account and has full admin access (dangerous).
 - General AWS protocol is to provide the least permissions.
 - All subsequent users are created with no access, and so must be assigned Roles and/or Policies to become useful.
-- New users are assigned (1) an Access Key ID; and (@) Secret Access Keys when first created. Store these safely as they cannot be viewed again from AWS console. These credentials can be used for programmatic (CLI) access to AWS.
+- New users are assigned (1) an Access Key ID; and (2) Secret Access Keys when first created. Store these safely as they cannot be viewed again from AWS console. These credentials can be used for programmatic (CLI) access to AWS.
 - Always set up MFA for the root user of a new account because duh.
 
 ### Policies
 
 - Amazon Resource Name (ARN): uniquely identifies any resource in AWS.
-  - syntax: `arn:partition:service:region:account_id:resource_info`
-  - partition: the aws infrastructure partition; typically `aws`, but other exists e.g. `aws-cn` for China
-  - service: any AWS service, e.g. s3, ec2, etc
-  - region: the deployment region, e.g. us-east-1
-  - account_id: your account id
-  - resource_info: some resource-specific identifiers
-  - double colon: omitted value, such as `region` when the resource is global in nature (S3, IAM)
+  - **syntax**: `arn:partition:service:region:account_id:resource_info`
+  - **partition**: the aws infrastructure partition; typically `aws`, but other exists e.g. `aws-cn` for China
+  - **service**: any AWS service, e.g. `s3`, `ec2`, etc
+  - **region**: the deployment region, e.g. `us-east-1`
+  - **account_id**: your account id
+  - **resource_info**: some resource-specific identifiers
+  - **double colon**: omitted value, such as `region` when the resource is global in nature (S3, IAM)
 - IAM Policies: JSON document that defines permissions
   - Identity policy: attaches to an identity; specifies what an identity can do
   - Resource policy: attaches to a resource; specifies who can access a resource and what actions they can perform on it
@@ -57,11 +57,11 @@
   - Controls the maximum permissions an IAM policy can grant.
   - Use cases: developers that create roles for lambda functions, admins creating adhoc users.
 
-### Resource Access Manager
+### Resource Access Manager (RAM)
 
 - Multi-account strategy: using different AWS accounts to separate concerns such as administration, billing, applications, etc.
   - Minimize blast radius of mistakes
-- RAM: Allows resoure sharing between accounts.
+- RAM: Allows resource sharing between accounts.
 - Shareable resources:
   - App Mesh
   - Aurora
@@ -74,7 +74,7 @@
 
 ### Directory Service
 
-- A family of managed services that allow you connect your AWS resources with an on-premise Microsoft Active Directory; i.e., access AWS resources with existing corporate credentials.
+- A family of managed services that allow you to connect your AWS resources with an on-premise Microsoft Active Directory; i.e., **access AWS resources with existing corporate credentials**.
 - SSO to any domain-joined EC2 instance.
 - Active Directory: an on-premise directory service that provides a hierarchical database of users, groups, and computers that are organized into trees and forests.
   - Apply group policies to manage users and devices.
@@ -96,7 +96,7 @@
     - Configure users, groups, and group policy objects (GPOs)
     - Standard AD tools
     - Scaling out domain controllers
-    - Trusts to built AD forest
+    - Trusts to build AD forest
     - Certificate authorities
     - Federation
 - **Simple AD**: a standalone directory in the cloud that only require simple AD features.
@@ -108,22 +108,22 @@
 - **AD Connector**: a directory gateway (proxy) for on-premise AD
   - Avoid caching information in the cloud.
   - Allow on-premise users to log in to AWS using AD
-  - join EC2 instacnes to existing AD domain.
+  - join EC2 instances to existing AD domain.
   - Can scale across multiple AD Connectors
 - **Cloud Directory**: directory-based store for developrs to manage hierarchical information
-  - Not AD compatible
+  - **Not AD compatible**
   - Multiple hierarchies with hundreds of millions of objects.
   - Use cases: org charts, course catalogs, device registries.
   - Fully managed service.
 - **Cognito User Pools**
-  - Not AD compatible, but still included in Directory Service
+  - **Not AD compatible**, but still included in Directory Service
 
 ### AWS Single Sign-On (SSO)
 
 - Managing user permissions within the multi-account strategy
 - AWS SSO service helps centrally manage access to AWS accounts and business applications (e.g. MS Office, GitHub, etc).
 - Use existing corporate identities is sign on.
-- Use case: want to grant security team (1) admin access to accounts running security tools; and (2) auditor access to all other accounts.
+- Use case: want to grant security team (1) _admin_ access to accounts running security tools; and (2) _auditor_ access to all other accounts.
 - Security Assertion Markup Language (SAML) 2.0: standard for logging users into applications based on their sessions in another context.
   - Example: SSO allows user to log into Slack or G Suite applications using Microsoft AD user context.
 - All sign-ons are logged in CloudTrail
@@ -139,7 +139,7 @@
 
 - One of the first services offered by AWS.
 - S3 provides secure, durable, highly scalable **object storage**.
-- Object storage is **not suitable for operating system installations**. See EBS and EFS instead.
+- Object storage is **not suitable for operating system installations**. See [EBS](#elastic-block-storage) and [EFS]() instead.
 - **Object storage**: Object storage (also known as object-based storage) is a computer data storage architecture that manages data as objects, as opposed to other storage architectures like file systems which manage data as a file hierarchy, and block storage which manages data as blocks within sectors and tracks.
   - Key: the name of the object.
   - Value: the data.
@@ -152,7 +152,7 @@
 - The largest object that can be uploaded in a single PUT is 5 gigabytes. For objects larger than 100 megabytes, customers should consider using the Multipart Upload capability.
 - When a file is uploaded, if successful then you will receive an HTTP 200 response.
 - S3 provides (1) tiered storage; (2) lifecycle management; (3) versioning; and (4) encryption, as additional services.
-- Access can be provided at the bucket-level (via Bucket Policies) or object-level (via Access Control Lists).
+- Access can be provided at the bucket-level (via **Bucket Policies**) or object-level (via **Access Control Lists**).
 - **S3 Reduced Redundancy Service** (RRS): deprecated service similar to S3 One Zone IA.
 
 ### Data Consistency Model
@@ -173,6 +173,7 @@
 - Eleven 9's durability.
 - Stored redundantly multiple devices in multiple facilities, i.e. across different Availability Zones.
 - Designed to withstand the loss of 2 facilities concurrently.
+- Highest cost
 
 #### S3 Infrequently Accessed (S3 IA)
 
@@ -213,9 +214,9 @@
   1. IA: about half of standard
   1. Intelligent Tiering: same as standard, but sometimes can be reduced to IA pricing. But also incurs monitoring and automation costs (per 1000 objects)
   1. One Zone IA: slightly less that IA
-    - If zone fails, your data is toast.
+      - If zone fails, your data is toast.
   1. Glacier: fractional costs
-  1. Glacier Deep Archive fraction of fractional costs
+  1. Glacier Deep Archive: fraction of fractional costs
 - How to get the best value
   - Best value is Intelligent Tiering unless you have high volume of objects.
 
@@ -250,8 +251,8 @@
 
 - By default, all new buckets are private. Therefore, cannot access publicly.
 - Security Levels
-- Bucket Policy: bucket-level permissions.
-- Access Control Lists: object-level permissions.
+  - Bucket Policy: bucket-level permissions.
+  - Access Control Lists: object-level permissions.
 - S3 buckets can be configured to create access logs, which log all requests made to the bucket. The logs can be sent to a destination bucket and this destination bucket can reside in another account.
 - **Encryption Types**
   - **In Transit** using HTTPS SSL/TLS.
@@ -264,12 +265,12 @@
 ### Performance
 
 - Prefix: the path between bucket name and object name.
-  - Can achieve 3,500 PUT/COPY/POST/DELTE **and** 5,500 GET/HEAD requests per second per prefix.
+  - Can achieve 3,500 PUT/COPY/POST/DELETE **and** 5,500 GET/HEAD requests per second per prefix.
   - Improve performance by spreading ops across different prefixes.
 - Limitations when using KMS 
   - When uploading a file, must call GenerateDataKey in the KMS API.
   - When downloading a file, must call Decrypt in the KMS API.
-  - Uploads and downloads count towards KMS quota. (hard limit;  no requests to increase quota)
+  - Uploads and downloads count towards KMS quota. (hard limit; cannot request a quota increase)
 - Multi-part Uploads: parallelize uploads
   - Recommended for files over 100 MB
   - Required for files over 5 GB
@@ -278,13 +279,13 @@
 
 ### S3 Object Lock & Glacier Vault Lock
 
-- **S3 Object Lock**: Store objects using a write once, read many (WORM) model. It can help prevent objects from being deleted or modificed for a fixed amount of time (or indefinitely).
+- **S3 Object Lock**: Store objects using a write once, read many (WORM) model. It can help prevent objects from being deleted or modified for a fixed amount of time (or indefinitely).
   - Meet regulations that require WORM storage.
-  - Add extra layer fo protection against object change or deletion.
+  - Add extra layer of protection against object change or deletion.
   - Can be applied on individual objects or across the bucket as a whole.
 - **Governance Mode**: users cannot overwrite or delete an object version or alter its lock settings except with special permission.
 - **Compliance Mode**: a protected object version cannot be overwritten or deleted by any user, including the root user. Retention mode cannot be changed and retention period cannot be shortened. 
-- **Legal Hold**: no retention peiod, just remains in effect until removed. Prevents object modficiation or deletion.
+- **Legal Hold**: no retention peiod, just remains in effect until removed. Prevents object modfication or deletion.
 - **Glacier Vault Lock**: Deploy and enforce compliance controls for individual S3 Glacier vaults with a Vault Lock policy. Specify controls, such as WORM, in a Vault Lock policy and lock the policy from future edits. Once locked, policy cannot be changed. 
 
 ### S3 Select & Glacier Select
@@ -309,10 +310,14 @@
   - No need to setup ETL processes.
   - Works directly with data stored in S3.
   - Use cases: query access logs, generated business reports, analyze cost and use reports, run queries on clickstream data.
+  - **Athena vs S3 Select** (from StackOverflow):
+    - AWS S3 Select is a cost-efficient storage optimization that allows retrieving data.
+    - AWS Athena is fully managed analytical service that allows running arbitrary ANSI SQL compliant queries - group by, having, window and geo functions, SQL DDL and DML.
+    - S3 Select operates on only one object while Athena to run queries across multiple paths, which will include all files within that path.
 - **Macie** is a security service that uses machine learning and natural language processing (NLP) to discover, classify, and protect sensitive data stored in S3.
   - Uses AI to recognize whether an S3 object contains sensitive data, such as Personal Identifiable Information (PII).
   - Provides dashboards, reportings and alerts.
-  - Can also analze CloudTrail logs.
+  - Can also analyze CloudTrail logs.
   - Good solution for PCI-DSS and preventing identity theft.
 - Athena is **active** querying; Macie is **passive** discovery
 
@@ -326,15 +331,20 @@
 ### General - Storage Gateway
 
 - Storage Gateway is a virtual machine image that can be installed on a host in your data center. Once installed and associated with an AWS account, the gateway can be configured and provides a direct line into AWS.
+- The Storage Gateway service is primarily used for attaching infrastructure located in a Data centre or office to the AWS Storage infrastructure. The AWS documentation states that; "You can think of a file gateway as a file system mount on S3."
 
 ### Storage Gateway Types
 
-- **File Gateway** (NFS): store flat files in S3.
-- The file gateway enables you to store and retrieve objects in Amazon S3 using file protocols, such as NFS. Objects written through file gateway can be directly accessed in S3.
-- Use cases for file gateway include: (a) migrating on-premises file data to Amazon S3, while maintaining fast local access to recently accessed data, (b) Backing up on-premises file data as objects in Amazon S3 (including Microsoft SQL Server and Oracle databases and logs), with the ability to use S3 capabilities such as lifecycle management, versioning and cross region replication, and, (c) Hybrid cloud workflows using data generated by on-premises applications for processing by AWS services such as machine learning, big data analytics or serverless functions.
-- **Volumes Gateway** (iSCSI): The volume gateway provides block storage to your applications using the iSCSI protocol. Data on the volumes is stored in Amazon S3. To access your iSCSI volumes in AWS, you can take EBS snapshots which can be used to create EBS volumes. The snapshots capture the incremental changes to save space.
-- Stored Volumes: store files on premise, back up to AWS.
-- Cached Volumes: only store recently accessed data on premise, back up everything else to AWS. Helps minimize the need to scale at the local data center, while still providing low latency to frequently accessed data.
+- **File Gateway**: store flat files in S3.
+  - File Gateway enables you to store and retrieve objects in Amazon S3 using file protocols, such as Network File System (NFS). Objects written through File Gateway can be directly accessed in S3.
+  - Use cases for File Gateway include: 
+    - (a) migrating on-premises file data to Amazon S3, while maintaining fast local access to recently accessed data 
+    - (b) Backing up on-premises file data as objects in Amazon S3 (including Microsoft SQL Server and Oracle databases and logs), with the ability to use S3 capabilities such as lifecycle management, versioning and cross region replication
+    - (c) Hybrid cloud workflows using data generated by on-premises applications for processing by AWS services such as machine learning, big data analytics or serverless functions.
+  - File Gateway volumes retain a copy of frequently accessed data subsets locally.
+- **[Volumes Gateway](https://aws.amazon.com/storagegateway/volume/)** (iSCSI): The volume gateway provides block storage to your applications using the [iSCSI protocol](https://en.wikipedia.org/wiki/ISCSI). Data on the volumes is stored in Amazon S3. To access your iSCSI volumes in AWS, you can take EBS snapshots which can be used to create EBS volumes. The snapshots capture the incremental changes to save space.
+- **Stored Volumes**: store files on premise, back up to AWS.
+- **Cached Volumes**: only store recently accessed data on premise, back up everything else to AWS. Helps minimize the need to scale at the local data center, while still providing low latency to frequently accessed data.
 - **Tape Gateway** (VTL): The tape gateway provides your backup application with an iSCSI virtual tape library (VTL) interface, consisting of a virtual media changer, virtual tape drives, and virtual tapes. Virtual tape data is stored in Amazon S3 or can be archived to Amazon Glacier.
 
 ### General - Snowball
@@ -343,9 +353,9 @@
 - Essentially a standard piece of storage hardware for manually delivering (potentially) huge amounts of data directly into (and out of) AWS. Bypass the internet tubes!
 - In their own words: AWS Snowball is a data transport solution that accelerates moving terabytes to petabytes of data into and out of AWS using storage devices designed to be secure for physical transport. Using Snowball helps to eliminate challenges that can be encountered with large-scale data transfers including high network costs, long transfer times, and security concerns.
 - Snowball Types
-- Snowball
-- Snowball Edge: the same as Snowball, but with compute capability. Basically a mini AWS, so you can bring compute capacity to places where it does not typically exist. E.g., you can run a lambda from a Snowball Edge.
-- Snowmobile: it's a truck.
+  - Snowball
+  - Snowball Edge: the same as Snowball, but with compute capability. Basically a mini AWS, so you can bring compute capacity to places where it does not typically exist. E.g., you can run a lambda from a Snowball Edge.
+  - Snowmobile: it's a truck.
 
 ## Content Delivery Network (CDN): CloudFront
 
@@ -361,7 +371,7 @@
 - **Origin**: The origin of all the files that the CDN will distribute, e.g. an S3 bucket, an EC2 instance, an ELB, or Route53.
 - **Distribution**: The name of your CDN.
 - Objects are cached for the Time To Live (TTL).
-- Cache can be manually cleared, for a charge.
+- Cache can be manually cleared (an "invalidation") for a charge.
 
 ### Distribution Types
 
@@ -392,13 +402,15 @@
 
 ### General
 
-- EC2 is a web service that provides resizable compute capacity in the cloud. EC2 = speed in provisioning or eliminating capacity.
+- EC2 is a web service that provides resizable compute capacity in the cloud. EC2 = speed in provisioning or eliminating compute capacity.
 - Purchase and Pricing Options
   - On Demand: pay fixed rate by the hour with no commitment.
   - Reserved: provides reserved capacity in 1- or 3-years terms for significantly reduced costs.
   - Spot: bid for capacity; no guarantees.
-    - If spot instance is terminated by AWS, no charge to consumer for partial hour. However, if consumer terminates instance with partial hour, consumer is charged.
+    - If spot instance is terminated by AWS, no charge to consumer for partial hour. 
+    - However, if consumer terminates instance with partial hour, consumer is charged.
   - Dedicated Hosts: dedicated physical EC2 server.
+    - Can only toggle between Dedicated mode and Host mode; cannot be changed from or to Default mode (shared tenancy)
 - Assign an IAM Role (i.e. limit permitted actions) to an EC2 in order to lock down blast radius from security breach.
 - Metadata about an instance is available; can get info about an instance (such as its public ip or the user data script).
 
@@ -420,6 +432,7 @@
 
 ### Security Groups
 
+- Security Groups operate at the instance level, they support "allow" rules only, and they evaluate all rules before deciding whether to allow traffic.
 - All Inbound Traffic is blocked by default.
 - All Outbound Traffic is allowed by default.
 - Changes to Security Groups take effect immediately.
@@ -433,6 +446,7 @@
 
 - An AMI provides the information required to launch an instance, which is a virtual server in the cloud. You must specify a source AMI when you launch an instance.
 - AMI selection criteria include: (1) Region; (2) operating system; (3) architecture (e.g. 32-bit or 64-bit); (4) launch permissions; (5) root device storage / volume (e.g. instance store or EBS).
+- AWS does not automatically copy launch permissions, user-defined tags, or S3 bucket permissions for an AMI across regions.
 - All AMIs are caterogized as backed by either (1) EBS; or (2) instance store.
 - EBS-backed
   - The root device store is an EBS volume created from an EBS snapshot.
@@ -455,14 +469,14 @@
     - Use network and security appliances in the VPC.
     - Create dual-homed instances with workloads/roles on distinct subnets.
     - Create a low-budget, high-availability solution.
-- EN (enhanced networking): uses a ingle root I/O virtualization to provide high-performance networking capabilities on supported instance types. For when ENIs are not capable of the necessary throughput.
+- EN (enhanced networking): uses a single root I/O virtualization to provide high-performance networking capabilities on supported instance types. For when ENIs are not capable of the necessary throughput.
   - Uses single root I/O virtualizatoin (SR-IOV) to provide high-performance networking capabilities on supported instance types. SR-IOV is a method of device virtualization that provides higher I/O performance and lower CPU utilization when compared to traditional virtualized network interfaces.
   - EN provides higher bandwidth, higher packet per second (PPS) performance and consistently lower inter-instance latencies. There is no additional charge for using EN, but instance type must support it.
   - ENA (Adapter): supports network speeds of up to 100 Gbps
   - Virtual Function (VF) interface: supports network speeds of up to 10 Gbps; typically for older instance types that don't support ENA.
   - Tips
-    - Ff an instance supports both, pick ENA over VF. 
-    - ENA vs ENI: if question about supporting network speed, pick ENA. Adding more ENIs does not necessarily increase throughput.
+    - If an instance supports both, pick ENA over VF. 
+    - **ENA vs ENI**: if question about supporting network speed, pick ENA. Adding more ENIs does not necessarily increase throughput.
 - EFA (Elastic Fabric Adapter): a network device that can attach to an EC2 instance to accelerate High Performance Computing (HPC) and machine learning applications.
   - Provides lower and more consistent latency and higher throughput than the TCP transport traditionally used in cloud-based HPC systems.
   - Can use OS-bypass, which enables HPC and machine learning applications to bypass the operating system kernel and to communicate directly with the EFA device. Dramatically increases speed and decreases latency. Only supported by Linux.
@@ -477,7 +491,7 @@
 - Spot Instance Termination: depends on your "Request Type", one-time or persistent. 
   - If one-time, dies and doesn't come back.
   - If persistent, is disabled and will go back to an open request and would be relaunched if spot price dips below maximum again.
-- Spot Fleet: a collection of spot and on-deman instances.
+- **Spot Fleet**: a collection of spot and on-demand instances.
   - Attempts to launch instances of both types to meet target capacity.
   - Prefers spot instances, but tops up with on-demand instances.
   - **Launch Pools**: defines things like EC2 instance type, OS, AZ, etc.
@@ -493,7 +507,7 @@
 - When an EC2 instance is started...
   1. Operating system boots up.
   1. Use data script is run. (bootstrap script)
-  1. Application(s) state.
+  1. Application(s) start.
 - When an EC2 instance is **hibernated**, the operating system is told to perform hibernation (suspend-to-disk). Hibernation **saves the contents from the instance memory** (RAM) to EBS root volume. 
 - When an instance is restarted out of hibernation...
   1. EBS root volume is restored to its previous state.
@@ -511,6 +525,7 @@
 - **Cluster**: clusters instances into a low-latency group in a single Availability Zone. Recommended for applications that require low network latency, high network throughput, or both.
   - CANNOT span multiple AZs.
 - **Spread**: spreads instances across underlying hardware. Recommended for applications that have a small number of critical instances that should be kept separate from one another.
+  - Maximum of 7 running instances per AZ.
 - **Partition**: spreads instances across logical partitions, ensuring that instances in one partition do not share underlying hardware with instances in other partitions.
 - AWS recommends that placement groups contain homogeneous instances (same size and same instance type family).
 - Placement groups cannot be merged.
@@ -559,6 +574,35 @@
   - Problem: the full snapshot is actually spread across several volumes. Some data is held in cache.
   - Solution: take an "application consistent snapshot." Stop the application from writing to disk and flush all caches to disk. Options: (1) Freeze the file system; (2) unmount the RAID array; or (3) shut down the associated EC2 instance.
 
+## Elastic File System
+
+### Official Resources
+
+- [EFS FAQ](https://aws.amazon.com/efs/faq/)
+
+### General
+
+- EFS is a fully-managed service that automatically scales file storage in the Amazon Cloud.
+- Storage that can be shared between resources, such as EC2s (unlike EBS).
+- Supports Network File System Version 4 (NFSv4) protocol.
+- Pricing: only pay for what you use; no pre-provisioning (in contrast to EBS).
+- Scales up to petabytes.
+- Supports thousands of concurrent NFS connections.
+- Data is stored across multiple AZs within a region.
+- Read after write consistency.
+- **Use case**: file server; centralized repository use by mutliple EC2s. Can apply user- and directory-level permissions to be universal across EC2 instances.
+
+### EFS vs Windows FSx
+
+- **Windows FSx**
+  1. A managed Windows Server that runs Windows Server Message Block (SMB) -based file services.
+  1. Designed for Windows and Windows applications.
+  1. Supports AD users, access control lists, group and securuty policies, and Distributed File System (DFS) namespaces and replication.
+- **EFS**
+  1. A managed NAS filer for EC2 instances based on Network File System (NFS) version 4.
+  1. One of the first netowrk file sharing protocols native to Unix and Linux.
+- **FSx for Lustre**: optimized for compute-instensive (i.e. HPC) workloads.
+
 ## Elastic Load Balancers (ELB)
 
 ### Official Resources
@@ -568,11 +612,11 @@
 ### General
 
 - A physical or virtual device that balances load across multiple servers.
-- Three types: (1) Application (ALB); (2) Network (NLB); (3) Classic (ELB)
-- **Application**: best suited for load balancing HTTP and HTTPS traffic. ALBs operate at Layer 7 (...) and are application-aware. ALBs can have advanced request routing that sends specified requests to specific web servers.  
+- Three types: (1) Application (ALB); (2) Network (NLB); (3) Classic (CLB)
+- **Application**: best suited for load balancing HTTP and HTTPS traffic. ALBs operate at [Layer 7](https://www.techopedia.com/definition/20338/layer-7#:~:text=Layer%207%20refers%20to%20the,end%2Duser%20processes%20and%20applications.) (application layer) and are application-aware. ALBs can have advanced request routing that sends specified requests to specific web servers.  
   - Load balancer could be user-preference aware to change e.g. language or currency.
   - Capable of advanced routing.
-- **Network**: best suited for load balancing TCP traffic where extreme performance is required. NLBs operate at Layer 4 (...). NLBs are capable of handling millions of requests per second while maintaining ultra-low latencies.
+- **Network**: best suited for load balancing TCP traffic where extreme performance is required. NLBs operate at [Layer 4](https://www.techopedia.com/definition/20335/layer-4) (network layer). NLBs are capable of handling millions of requests per second while maintaining ultra-low latencies.
 - **Classic**: legacy ELBs. Classics can load balance HTTP and HTTPS with Layer 7-specific features or can load balance on TCP with Layer 4-specific features. Not recommended anymore.
 - **504 Errors**: Gateway Timed Out because the underlying application stops or fails. Could be web server or database, not the load balancer itself. Might need to scale up or out.
 - **X-Forwarded-For**: A load balancer forwards requests, but from the ELB's private IP. If you need the IPv4 address of an end user, look at the X-Forwarded-For header.
@@ -608,8 +652,8 @@
   1. **Maintain**: periodic healthchecks ensure that specified configuration is maintained at all times. When an unhealthy instance is found, ASG terminates it and launches a new one.
   1. **Scale Manually**: Specify only the maximum, minimum, and desired capacity. ASG handles creation and termination of instances to maintain manually indicated capacity.
   1. **Scale on Schedule**: scaling actions performed automatically as a function of date and time. Useful when you have predictable scaling needs, such as SOD or EOD.
-  1. **Scale on Demand**: define scaling policies to execute scaling actions when certain conditions are met. For example, if CPU utilization reaches 50% for 1 hour, then add additional EC2 instance. 
-  1. **Predictive Scaling**: AWS Auto Scaling (separate resource? Yes!) helps you maintain optimal availability and performance by combining predictive scaling and dynamic scaling (proactive and reactive approaches, respectively) to scale EC2 capacity faster.
+  1. **Scale on Demand** (dynamic/reactive): define scaling policies to execute scaling actions when certain conditions are met. For example, if CPU utilization reaches 50% for 1 hour, then add additional EC2 instance. 
+  1. **Predictive Scaling**: [AWS Auto Scaling](https://aws.amazon.com/autoscaling/) (separate resource? Yes!) helps you maintain optimal availability and performance by combining predictive scaling and dynamic scaling (proactive and reactive approaches, respectively) to scale EC2 capacity faster.
 
 ## Highly Available (HA) Architecture
 
@@ -620,15 +664,16 @@
 - Multiple AZ is for disaster recovery. Read Replicas (RDS) is for performance.
 - Scaling out (use ASG to add more instances) vs scaling up (more resources within an instance).
 - S3 and S3-IA are highly available.
+- Availability Zone names are unique per account and do not represent a specific set of physical resources.
 
 ### Bastions
 
 - A **bastion** is a special purpose server instance that is designed to be the primary access point from the Internet and acts as a proxy to your other EC2 instances. 
-- Solves the problem of proliferating access points to your system and the number of EC2 instances grows.
+- Solves the problem of proliferating access points to your system as the number of EC2 instances grows.
 - Make a bastion highly available by putting one bastion in each AZ, then put both behind a NLB (which would share traffic between the two bastions).
-  - However, NLBs are expensive, so this strategy is best for Prod.
+  - NOTE: NLBs are expensive, so this strategy is best for Prod.
 - For a development environment, can get away with an ASG (instead of an NLB) and default to one bastion. If it goes down, ASG can spin up a new bastion in a different AZ. 
-  - Drawback is that there will be downtime between bastion 1 going down and ASG spinning up bastion 2.
+  - Drawback is that there will be downtime between bastion 1 going down and the ASG spinning up bastion 2.
 
 ### On-Premise Strategies
 
@@ -639,16 +684,16 @@
   - Supports *homogenous* migration (Oracle -> Oracle) and *heterogenous* migration (MySQL -> Aurora)
 - Server Migration Service (SMS)
   - Supports incremental replication of on-premise servers to AWS.
-  - Use cases: backup tool, multi-site strategy, and DR.
+  - Use cases: backup tool, multi-site strategy, and Disaster Recovery.
 - AWS Application Discovery Service
-  - this service helps enterprise customers plan migration projects by gathering information about the on-premise data centers.
+  - This service helps enterprise customers plan migration projects by gathering information about the on-premise data centers.
   - Install AWS Application Discover Agentless Connector as a virtual application on VMware vCenter.
   - The Agentless Connector builds a server utilization map and dependency map of the on-premise environment.
   - The collected data is encrypted and retained. Data can be exported as CSV and used to estimate Total Cost of Ownership (TCO) of running on AWS and to plan migration to AWS.
   - Same data is available on AWS Migration Hub, which helps migrate discovered servers and track the migration progress.
 - VM Import/Export
   - Migrate existing applications to EC2.
-  - Create a DR strategy on AWS or use AWS as a second site.
+  - Create a Disaster Recovery strategy on AWS or use AWS as a second site.
   - Can export AWS VMs back to on-premise.
 - Download Amazon Linux 2 as an ISO
   - Essentially run an EC2 locally.
@@ -658,7 +703,7 @@
 - HPC can be achieved on AWS by designing infrastructure to optimize for data transfer, compute and networking, storage, and orchestration and automation.
 - Data transfer 
   1. Use snowball or snowmobile (terabytes/petabytes of data).
-  1. AWS Datasync to store on S3, EFs, FSx for Windows, etc.
+  1. AWS Datasync to store on S3, EFS, FSx for Windows, etc.
   1. Direct Connect (dedicated line into AWS data center)
 - Compute and Networking
   1. EC2 instances that are GPU or CPU optimized.
@@ -677,6 +722,7 @@
 ## AWS WAF (web application firewall)
 
 - AWS WAF is a web application firewall that monitors the HTTP and HTTPS requests that are forwarded to CloudFront, an ALB, or API Gateway. Let's you control access to your content.
+- Is Layer 7-aware
 - Can filter on IPs or query strings
 - Possible behaviors
   1. Allow all except as filtered.
@@ -689,16 +735,14 @@
   - Strings, either specific values or regex patterns
   - Length of requests
   - Presence of SQL code that is likely to be malicious (i.e. SQL injection)
-  - Presence of a scripte that is likely to be malicious (i.e. cross-site scripting)
+  - Presence of a script that is likely to be malicious (i.e. cross-site scripting)
 
 ## Elastic Beanstalk
-
-### General
 
 - Infrastructure for people who don't like infrastructure.
 - For users who want to provision preset infrastructure without having to understand the complexity of the underlying resources. EBS handles capacity provisioning, load balancing, scaling, and application health monitoring.
 
-## Applications
+## Application Resources
 
 ### SQS
 
@@ -717,10 +761,13 @@
   - Guaranteed delivery order.
   - Guaranteed exactly-once processing.
   - Limited to 300 transactions / sec.
-- Visiblity Timeout is the amoutn of time that a message is invisible but still in the queue after a reader pulls the message. 
+- **Visiblity Timeout** is the amount of time that a message is invisible but still in the queue after a reader pulls the message. 
   - If the reader job is processed before the visibility timeout expires, then the message is deleted from the queue.
   - If the reader job is not processed before the visibility timeout expires, then the message is remade visible in the queue and will be pulled again. This could result in the same message delivered twice.
-  - Timeout maximum is 12 hours.
+  - **Timeout maximum is 12 hours**.
+- Short vs Long Polling
+  - With **short polling**, the `ReceiveMessage` request queries only a subset of the servers (based on a weighted random distribution) to find messages that are available to include in the response. Amazon SQS sends the response right away, even if the query found no messages.
+  - With **long polling**, the `ReceiveMessage` request queries all of the servers for messages. Amazon SQS sends a response after it collects at least one available message, up to the maximum number of messages specified in the request. Amazon SQS sends an empty response only if the polling wait time expires.
 
 ### Simple Workflow Service (SWF)
 
@@ -740,7 +787,7 @@
 
 - Managed service that provides highly scalable capability to publish messages from an application to subscribers.
 - Use cases: push notifications to SMS, email, SQS, or any HTTP endpoint.
-- Topic: easy way to group subscribers and deliver identical copies of the same notification.
+- **Topic**: an easy way to group subscribers and deliver identical copies of the same notification.
 - All messages are stored redundantly across multiple AZs.
 - Benefits
   - Instantaneous push-based delivery.
@@ -751,7 +798,7 @@
 ### Elastic Transcoder
 
 - Media transcoder accessible as an API.
-- Convert media files from their original source format into differeant formats, such as to deliver to and play on smartphones, tablets, desktops, etc.
+- Convert media files from their original source format into different formats, such as to deliver to and play on smartphones, tablets, desktops, etc.
 - Provides transcoding presets for popular output formats.
 - Pricing: based upon (1) minutes of transcoding; and (2) resolution of transcoding.
 
@@ -767,7 +814,7 @@
   - Can connect to CloudWatch to log all requests.
   - Can maintain multiple versions of an API.
 - Cheap and scalable.
-- Uses APIG domain by default, but can use custom domain.
+- Uses APIG domain by default, but can be aliased to a custom domain (www.example.com).
 - Supports SSL/TLS certificates.
 - API caching can be enabled to reduce calls to origin and improve latency.
   - Configure response TTL.
@@ -782,25 +829,25 @@
 - Kinesis makes it easy to load and analyze streaming data.
 - Types
   1. Streams: data producers stream data to and stored in Kinesis 
-    - Retention period is between 1 and 7 days. 
-    - Data is stored in shards, which can be logical separators (social media shard, IOT shard).
-    - Consumers can analyze data within the shards.
-    - Shard: 5 transactions/second for reads, up to read rate of 2 MB/second. Up to 1,000 records/second for writes, up to write rate of 1 MB/second (including partition keys).
-    - The data capacity of the stream is sum of the capacity of its shards.
+      - Retention period is between 1 and 7 days. 
+      - Data is stored in shards, which can be logical separators (social media shard, IOT shard).
+      - Consumers can analyze data within the shards.
+      - Shard: 5 transactions/second for reads, up to read rate of 2 MB/second. Up to 1,000 records/second for writes, up to write rate of 1 MB/second (including partition keys).
+      - The data capacity of the stream is sum of the capacity of its shards.
   1. Firehose: no persistence storage, data needs to be operated upon as it comes in.
-    - Use lambda to provide compute-on-demand.
+      - Use lambda to provide compute-on-demand.
   1. Analytics: when paired with Streams or Firehose, can provide analysis on the fly.
 
 ### Cognito & Web Identity Federation
 
-- Web Identity Federation helps to provide users access to AWS resources after successful authentication with a web-based identity provider, such as Google or Facebook. Following successful authentication, the user receives an authentication code from the Web ID provider, which is then traded for temporary AWS security credentials.
-- Cognito is Web Identity Federation as a service.
+- **Web Identity Federation** helps to provide users access to AWS resources after successful authentication with a web-based identity provider, such as Google or Facebook. Following successful authentication, the user receives an authentication code from the Web ID provider, which is then traded for temporary AWS security credentials.
+- **Cognito** is Web Identity Federation as a service.
   - Provides sign-up and sign-in functionalities.
   - Can grant guest user access.
   - Acts as an Identity Broker (i.e. provides that handy Sign In With Google button).
   - Synchronizes user data across devices.
 - Temporary credentials map to an IAM role allowing access to required resources. Provides seamless user experience.
-- **User Pools**: for **authentication** (**identity verification**). Its a user directory that manage sign-up and sign-in functionality for mobile and web applications. 
+- **User Pools**: for **authentication** (**identity verification**). Its a user directory that manages sign-up and sign-in functionality for mobile and web applications. 
 - **Identity Pools**: for **authorization** (**access control**). Create unique identities for users and give them access to other AWS services.
 
 ## CloudWatch
@@ -815,35 +862,7 @@
 - Alarms: receive alerts when thresholds are hit.
 - Events: programmatically respond to state changes in AWS resources.
 - Logs: aggregate, monitor, and store logs from AWS resources.
-
-## Elastic File System (EFS)
-
-### Official Resources
-
-- [EFS FAQ](https://aws.amazon.com/efs/faq/)
-
-### General
-
-- EFS is a fully-managed service that automatically scales file storage in the Amazon Cloud.
-- Storage that can be shared between resources, such as EC2s (unlike EBS).
-- Supports Network File System Version 4 (NFSv4) protocol.
-- Pricing: only pay for what you use; no pre-provisioning (in contrast to EBS).
-- Scales up to petabytes.
-- Supports thousands of concurrent NFS connections.
-- Data is stored across multiple AZs within a region.
-- Read after write consistency.
-- **Use case**: file server; centralized repository use by mutliple EC2s. Can apply user- and directory-level permissions to be universal across EC2 instances.
-
-### EFS vs Windows FSx
-
-- **Windows FSx**
-  1. A managed Windows Server that runs Windows Server Message Block (SMB) -based file services.
-  1. Designed for Windows and Windows applications.
-  1. Supports AD users, access control lists, group and securuty policies, and Distributed File System (DFS) namespaces and replication.
-- **EFS**
-  1. A managed NAS filer for EC2 instances based on Network File System (NFS) version 4.
-  1. One of the first netowrk file sharing protocols native to Unix and Linux.
-- **FSx for Lustre**: optimized for compute-instensive (i.e. HPC) workloads.
+- Using the default settings metrics are sent every 5 minutes to CloudWatch. Using the detailed settings, metrics are then sent every 1 minute.
 
 ## Domain Name Servers (DNS): Route53
 
@@ -859,12 +878,14 @@
 - **Name Server Record** (NS): used by top level domain servers to direct traffic to the content DNS server that contains the authoritative DNS records.
 - **Address Record** (A): used by a computer to translate the name of the domain into an IP address.
 - **Canonical Name** (CNAME): used to resolve one domain to another domain. Redirect visitors from https://mobile.example.com to https://m.example.com.
-- **Alias Records**: an AWS concept that is used to map resource record sets in your hosted zone to to ELBs, CloudFront distributions, or S3 buckets that are configured as websites.
+- **Alias Records**: an AWS concept that is used to map resource record sets in your hosted zone to ELBs, CloudFront distributions, or S3 buckets that are configured as websites.
   - Alias Records are like AWS-interal CNAMEs in that you map a source DNS name to a target DNS name.
   - Material difference: CNAME cannot be used for naked domain names (e.g. https://kwhitejr.com); use Alias or A Records instead.
+- **Zone Apex**: the root domain or naked domain, e.g. kwhitejr.com as opposed to www.kwhitejr.com. The zone apex **must** be an A Record.
 - Time To Live (TTL): the length that a DNS record is cached on either the resolving server or the user's own computer. TTL is described in seconds. The lower the TTL, the faster changes to DNS records propagate.
 - Mail Server Record (MX)
 - Reverse Lookups (PTR)
+- Route 53 has a security feature that prevents internal DNS from being read by external sources. The work around is to create a EC2 hosted DNS instance that does zone transfers from the internal DNS, and allows itself to be queried by external servers.
 
 ### Routing Types
 
@@ -872,7 +893,8 @@
 - **Weighted Round Robin** (WRR): Weighted Round Robin allows you to assign weights to resource record sets in order to specify the frequency with which different responses are served. You may want to use this capability to do A/B testing, sending a small portion of traffic to a server on which you’ve made a software change. For instance, suppose you have two record sets associated with one DNS name—one with weight 3 and one with weight 1. In this case, 75% of the time Route 53 will return the record set with weight 3 and 25% of the time Route 53 will return the record set with weight 1. Weights can be any number between 0 and 255.
 - **Latency Based Routing** (LBR): Latency Based Routing is a new feature for Amazon Route 53 that helps you improve your application’s performance for a global audience. You can run applications in multiple AWS regions and Amazon Route 53, using dozens of edge locations worldwide, will route end users to the AWS region that provides the lowest latency.
 - **Failover Routing**: used when you want to create an active/passive setup. Route53 monitors the health of the active address and if the healthcheck fails, then traffic is routed to the passive endpoint.
-- **Geolocation Routing**: traffic is routed based upon the geographic location of your end user. Use case: EC2s are customized for localities, e.g. with language or currency options.
+- **Geolocation Routing**: traffic is routed based upon the geographic location of your end user. Geographic location is based on national boundaries. Use case: EC2s are customized for localities, e.g. with language or currency options.
+- **GeoPromixity Routing**: traffic is routed based upon latitude and longitude.
 - **Mutlivalue Answer**: If you want to route traffic approximately randomly to multiple resources, such as web servers, you can create one multivalue answer record for each resource and, optionally, associate an Amazon Route 53 health check with each record. For example, suppose you manage an HTTP web service with a dozen web servers that each have their own IP address. No one web server could handle all of the traffic, but if you create a dozen multivalue answer records, Amazon Route 53 responds to DNS queries with up to eight healthy records in response to each DNS query. Amazon Route 53 gives different answers to different DNS resolvers. If a web server becomes unavailable after a resolver caches a response, client software can try another IP address in the response.
 
 ## Databases
@@ -893,7 +915,7 @@
   - **Automated Backup**: recover database from any point within the retention period (which is 1 to 35 days). Takes a full daily snapshot and also stores transaction logs throughout the day. When a recovery is initiated, AWS chooses the most recent daily back up, then applies the transaction logs from that day. This allows point-in-time recovery down to a second within the retention period.
   - Automated Backups are enabled by default. Backup data is stored in S3; user gets free storage equal to the size of the database.
   - Elevated latency during backup window (I/O may be suspended); therefore, carefully schedule the backup window.
-  - By default, Autmated Backups are deleted when the RDS instance is deleted.
+  - By default, Automated Backups are deleted when the RDS instance is deleted.
   - **DB Snapshots**: manual process (user initiated). These are stored even after the RDS instance is deleted.
 - **Multi-AZ**: When you provision a Multi-AZ DB Instance, Amazon RDS automatically creates a primary DB Instance and synchronously replicates the data to a standby instance in a different Availability Zone (AZ).
   - Intended for disaster recovery.
@@ -910,7 +932,7 @@
   - Read Replica can be in a different region from source.
 - Encryption at rest is supported for all RDS flavors. Encryption is through Key Management Service (KMS).
 
-### DynamoDb (NoSQL)
+### DynamoDB (NoSQL)
 
 - A fast and flexible **nonrelational database** service for any scale.
 - Document and key-value data models.
@@ -926,7 +948,7 @@
 - Transactions
   - Multiple all-or-nothing operations, such as financial transactions (debits and credits must happen simultaneously) or order fulfillment.
   - DynamoDB performs two underlying reads or writes of every item in the transaction: one to prepare the transaction and one to commit the transaction.
-  - Can operation on up to 25 items or 4 MB of data.
+  - Can operate on up to 25 items or 4 MB of data.
   - No additional costs, but probably need to up your capacity.
 - On-Demand Capacity
   - Pay-per-request pricing.
@@ -968,6 +990,7 @@
     - Fine-grained access with IAM (op-level permissions)
   - Can monitor access with CloudWatch and CloudTrail
   - Control access with VPC endpoints (and therefore no exposure to public internet)
+- HTTP Access: can perform operation via POST, must include headers `host`, `content-type`, `x-amz-date`, `x-amz-target`
 
 ### RedShift
 
@@ -1056,7 +1079,7 @@
 
 ### Official Resources
 
-- [RDS FAQ](https://aws.amazon.com/vpc/faqs/)
+- [VPC FAQ](https://aws.amazon.com/vpc/faqs/)
 - [How-to Video](https://www.youtube.com/watch?v=fpxDGU2KdkA)
 - [Practical VPC Design](https://medium.com/aws-activate-startup-blog/practical-vpc-design-8412e1a18dcc)
 
@@ -1080,20 +1103,29 @@
 - VPC can span multiple AZs in a single Region.
 - Main reason to create a VPC (and not use default) is granular security controls, such as public and private subnets.
 - Connecting VPC to a Datacenter
-  - Virtual Private Gateway: custom connection point (on VPC) for your datacenter
-  - VPN Connection: secure tunnel from datacenter to VPC.
-  - Customer Gateway: a physical device or software that sits on datacenter side of connection.
+  - **Virtual Private Gateway**: custom connection point (on VPC) for your datacenter
+  - **VPN Connection**: secure tunnel from datacenter to VPC.
+  - **Customer Gateway**: a physical device or software that sits on datacenter side of connection.
+  - When connecting a VPN between AWS and a third party site, the Customer Gateway is created within AWS, but it contains information about the third party site e.g. the external IP address and type of routing. The Virtual Private Gateway has the information regarding the AWS side of the VPN and connects a specified VPC to the VPN. 
+- There are a number of ways to set up a VPN. AWS have a standard solution that makes use of a VPC with a private subnet, Hardware VPN Access, a VPG, and an on-premise Customer Gateway.
 - Peering Connection: VPCs can talk to each other if connected from both sides. Must be within the same region. Peer connections are 1-to-1; no transitive peering (daisy chaining).
   - VPCs with overlapping CIDRs cannot be peered.
 - **Tenancy**: VPC can be created on (1) Default; or (2) Dedicated hardware. Performance and cost are both higher on dedicated.
+  - Once a VPC is set to Dedicated hosting, it can be changed back to default hosting via the CLI, SDK or API. Note that this will not change hosting settings for existing instances, only future ones. Existing instances can be changed via CLI, SDK or API but need to be in a stopped state to do so
 - Private IP Addresses
   - Not accessible from regular internet; only from within the VPC.
   - Instances on VPC are automatically assigned a Private IP.
 - Public IP Addresses
   - Required to access an instance from the general internet.
   - Assigned to an instance from AWS's pool of public IPs. When an instance is terminated and restarted, the public IP is returned to the pool and a new one is chosen.
-  - In order to preserve a Public IP address across termination and restart, user must get an Elastic IP Address (persistent IP address assigned to user account). Charges apply if an EIP is allocated to an account but remains unattached to an instance.
-  - Associate the EIP with a VPC's NAT Gateway in order to
+  - Elastic IP Address (EIP)
+    - An Elastic IP address is a static IPv4 address designed for dynamic cloud computing. By using an Elastic IP address, you can mask the failure of an instance or software by rapidly remapping the address to another instance in your account. An Elastic IP address is allocated to your AWS account, and is yours until you release it.
+    - An Elastic IP address is a public IPv4 address, which is reachable from the internet. If your instance does not have a public IPv4 address, you can associate an Elastic IP address with your instance to enable communication with the internet. For example, this allows you to connect to your instance from your local computer.
+    - AWS does not support Elastic IP addresses for IPv6 (as of Jan 2021).
+    - In order to preserve a Public IP address across termination and restart, user must get an Elastic IP Address (persistent IP address assigned to user account). Charges apply if an EIP is allocated to an account but remains unattached to an instance.
+- Security: Stateful vs Stateless
+  - **Security Groups are stateful**: This means any changes applied to an incoming rule will be automatically applied to the outgoing rule. e.g. If you allow an incoming port 80, the outgoing port 80 will be automatically opened.
+  - **Network ACLs are stateless**: This means any changes applied to an incoming rule will not be applied to the outgoing rule. e.g. If you allow an incoming port 80, you would also need to apply the rule for outgoing traffic.
 
 ### CIDR Block
 
@@ -1115,35 +1147,45 @@
   - All traffic is routed through the VPC's Internet Gateway
 - **Private Subnet**
   - For resources that don't require internet or should be protected, e.g. DB instances.
+- Amazon reserves the first four and last IP addresses (five total) in each subnet's CIDR block. If your subnet CIDR block is too small (e.g. /28), then you may run out of internal private IP addresses.
 
-### Internet Gateway (IG)
+### NAT Gateway
+You can use a network address translation (NAT) gateway to enable instances in a private subnet to connect to the internet or other AWS services, but prevent the internet from initiating a connection with those instances.
+- You are charged for creating and using a NAT gateway in your account. NAT gateway hourly usage and data processing rates apply. Amazon EC2 charges for data transfer also apply.
+- You can associate exactly one Elastic IP address with a NAT gateway. You cannot disassociate an Elastic IP address from a NAT gateway after it's created. To use a different Elastic IP address for your NAT gateway, you must create a new NAT gateway with the required address, update your route tables, and then delete the existing NAT gateway if it's no longer required.
+- Each EC2 instance performs source/destination checks by default. This means that the instance must be the source or destination of any traffic it sends or receives. However, a NAT instance must be able to send and receive traffic when the source or destination is not itself. Therefore, you must disable source/destination checks on the NAT instance.
+- The following diagram illustrates the architecture of a VPC with a NAT gateway. The main route table sends internet traffic from the instances in the private subnet to the NAT gateway. The NAT gateway sends the traffic to the internet gateway using the NAT gateway’s Elastic IP address as the source IP address.  
+![NAT and VPC](https://docs.aws.amazon.com/vpc/latest/userguide/images/nat-gateway-diagram.png)
 
-- IG is a horizontally scaled, redundant, and highly available VPC component that allows communication between instances in a VPC and the wider internet. No availability risks or bandwidth constraints on VPC network traffic.
-- IG must be attached to a VPC.
+### Internet Gateway (IGW)
+
+- IGW is a horizontally scaled, redundant, and highly available VPC component that allows communication between instances in a VPC and the wider internet. No availability risks or bandwidth constraints on VPC network traffic.
+- IGW must be attached to a VPC.
 - All instances utilizing an IG must have either a Public IP or an EIP.
 - Public Subnets' Route Table must point to the Internet Gateway to allow traffic.
 - All network rules (network Access Control Lists and Security Groups) must be configured to allow traffic to and from the relevant VPC instances.
+- **[NAT vs IGW](https://medium.com/awesome-cloud/aws-vpc-difference-between-internet-gateway-and-nat-gateway-c9177e710af6)**: Attaching an IGW to a VPC allows instances with public IPs to access the internet,
+while NAT(s) Gateway allow instances with no public IPs to access the internet.
 
 ### Route Table
 
 - Default Route Table only permits local traffic.
 
-### Network Access Control Lists (ACLs)
+### Network Access Control Lists (NACLs)
 
-- VPC comes with a default network ACL; **default ACL allows all inbound and outbound traffic**.
-- New ACL denies all inbound and outbound traffic.
+- VPC comes with a default NACL; **default NACL allows all inbound and outbound traffic**.
+- New NACL **denies** all inbound and outbound traffic.
 - Need to manually enable inbound and outbound traffic, including "[ephemeral ports](https://en.wikipedia.org/wiki/Ephemeral_port)."
 - Ephemeral Port:
-  > An ephemeral port is a short-lived port number used by an Internet Protocol (IP) transport protocol. Ephemeral ports are allocated automatically from a predefined range by the IP stack software. An ephemeral port is typically used by the Transmission Control Protocol (TCP), User Datagram Protocol (UDP), or the Stream Control Transmission Protocol (SCTP) as the port assignment for the client end of a client–server communication to a particular port (usually a well-known port) on a server.
-  
+  > An ephemeral port is a short-lived port number used by an Internet Protocol (IP) transport protocol. Ephemeral ports are allocated automatically from a predefined range by the IP stack software. An ephemeral port is typically used by the Transmission Control Protocol (TCP), User Datagram Protocol (UDP), or the Stream Control Transmission Protocol (SCTP) as the port assignment for the client end of a client–server communication to a particular port (usually a well-known port) on a server.  
+  >
   > On servers, ephemeral ports may also be used as the port assignment on the server end of a communication. This is done to continue communications with a client that initially connected to one of the server's well-known service listening ports. Trivial File Transfer Protocol (TFTP) and Remote Procedure Call (RPC) applications are two protocols that can behave in this manner. Note that the term "server" here includes workstations running network services that receive connections initiated from other clients (e.g. Remote Desktop Protocol).
 - Rules are evaluated in numerical order; first rule trumps later rules.
-- Network ACLs are evaluated before security groups; i.e. ACL-denied traffic will never reach security group for evaluation.
-- Each subnet in VPC must be associated with a network ACL. Ff you don't explicitly associate a subnet with a network ACL, then the subnet is automatically associated with the default network ACL.
-- When **blocking specific IP addresses**, use network ACL not security group.
-- Network ACL to subnet relationship is 1:many, but subnet to network ACL relationship is 1:1.
-- Network ACLs are stateless; responses to allowed inbound traffic are subject to rules for outbound traffic.
-  - Contrast with stateful security groups.
+- **NACLs are evaluated before security groups**; i.e. NACL-denied traffic will never reach security group for evaluation.
+- Each subnet in VPC must be associated with a NACL. If you don't explicitly associate a subnet with a NACL, then the subnet is automatically associated with the default NACL.
+- When **blocking specific IP addresses**, use NACL not security group.
+- NACL to subnet relationship is 1:many, but subnet to NACL relationship is 1:1.
+- NACLs are stateless
 
 ### AWS Global Accelerator
 
@@ -1192,7 +1234,7 @@
 - Allows user to have transitive peering between thousands of VPCs and on-premises data centers.
 - Works on regional basis by default but can also work across regions.
 - Can work across AWS accounts with Resource Access Manager.
-- Can use route tables to limit VPCP-to-VPC communication.
+- Can use route tables to limit VPC-to-VPC communication.
 - Works with Direct Connect and VPN connections.
 - **Supports IP multicast** (IP multicast is a method of sending Internet Protocol (IP) datagrams to a group of interested receivers in a single transmission. It is the IP-specific form of multicast and is used for streaming media and other network applications. It uses specially reserved multicast address blocks in IPv4 and IPv6.)
 
@@ -1213,9 +1255,11 @@
   - Typically automated processes.
   - Content scrapers.
   - Bad bots.
-  - Fake a user agent.
-  - May engage in Denial of Service (DoS) attacks.
+  - Fake user agent.
+  - Denial of Service (DoS) attacks.
 - Network Access Control List (NACL): (Inbound traffic tables)
+  - NACL is stateless
+  - Updates are instantaneous.
   - Can create DenyList to block specific bad actors.
   - Can create AllowList to allow only trusted actors.
   - Firewalls:
@@ -1229,8 +1273,8 @@
 
 ### Key Management Service (KMS)
 
-- KMS is a service that creates and manages cryptographic keys and control their use across a wide range of AWS services and in your applications. AWS KMS is a secure and resilient service that uses hardware security modules that have been validated under FIPS 140-2, or are in the process of being validated, to protect your keys.
-- A regional manageed service to manage encryption and decryption of customer master keys (CMKs).
+- KMS is a service that creates and manages cryptographic keys and controls their use across a wide range of AWS services and in your applications. AWS KMS is a secure and resilient service that uses hardware security modules that have been validated under FIPS 140-2, or are in the process of being validated, to protect your keys.
+- A regional managed service to manage encryption and decryption of customer master keys (CMKs).
 - CMK is a logical pointer to a key.
 - Ideal for encrypting S3 objects and API keys stored in Systems Manager Parameter Store.
 - Encrypt and decrypt data up to 4 KB
@@ -1246,7 +1290,7 @@
   - Symmetric CMKs (default)
     - Same key used for encryption and decryption.
     - Based on AES-256 standard.
-    - Never leaces AWS unencrypted.
+    - Never leaves AWS unencrypted.
     - Must call the KMS APIs to use.
     - Used by AWS services integrated with KMS.
     - Can be used to generate data keys, data key pairs, and random byte strings.
@@ -1329,7 +1373,7 @@
   - Run a container on an engine like **Docker**.
   - Provides the **isolation** benefits of virtualization, but with less overhead and faster starts than traditional VMs.
   - Containerized applications are **portable** and offer **consistent environment**. Should get same experience whether runnning locally, remotely, etc.
-- ECS is a managaged container orchestration service.
+- ECS is a managed container orchestration service.
 - Create clusters to manage fleets of container deployments.
   - ECS manages EC2 or Fargate instances.
 - ECS schedules containers for optimal placement within cluster.
@@ -1368,3 +1412,13 @@
 - Instance Roles vs Task Roles
   - Instance roles would share permissions across all the tasks in the cluster.
   - Task roles provide more granular permissioning to each task.
+
+## Other 
+
+### VPC Flow Logs
+
+- VPC Flow Logs can be created at the VPC, subnet, and network interface levels.
+
+### Hypervisors
+
+### Opsworks

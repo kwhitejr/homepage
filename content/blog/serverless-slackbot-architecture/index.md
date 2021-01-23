@@ -1,59 +1,12 @@
-
-```
-title Ingest Command
-
-Slack -->+ API Gateway: /do-thing --flag foo=bar
-API Gateway -->+ Cmd Controller Lambda: cmd payload
-note over Cmd Controller Lambda: 
-    1. Send Sync Response to Slack
-    2. Forward Async job to Worker
-end note
-Cmd Controller Lambda -->- API Gateway: 200 ok
-API Gateway -->- Slack: 200 ok
-Cmd Controller Lambda -> DoThing Worker Lambda: forward cmd payload
-note over DoThing Worker Lambda: 
-    1. Perform requested job
-    2. Post message back to Slack
-end note
-DoThing Worker Lambda -> Slack: job ok
-```
-
-```
-title Ingest Command and Integrate Interaction
-
-Slack -->+ API Gateway: /start-interaction --flag foo=bar
-API Gateway -->+ Cmd Controller Lambda: cmd payload
-note over Cmd Controller Lambda: 
-    1. Send Sync Response to Slack
-    2. Forward Async job to Worker
-end note
-Cmd Controller Lambda -->- API Gateway: 200 ok
-API Gateway -->- Slack: 200 ok
-Cmd Controller Lambda -> MyInteraction Worker Lambda: forward cmd payload
-note over MyInteraction Worker Lambda: 
-    1. Create interaction config
-    2. Post interaction back to Slack
-end note
-MyInteraction Worker Lambda -> Slack: interaction
-Slack -->+ API Gateway: User Input
-API Gateway -->+ Interaction Controller Lambda: user input payload
-Interaction Controller Lambda -->- API Gateway: 204 ok
-API Gateway -->- Slack: 204 ok
-Interaction Controller Lambda -> UserInput Worker Lambda: forward user input payload
-note over UserInput Worker Lambda: 
-    Respond to user input
-end note
-UserInput Worker Lambda -> Slack: job complete
-```  
-  
-# Serverless SlackBot Architecture
+ # Serverless SlackBot Architecture
 
 ## Motivation 
 
-**SlackBots** provide a great entry point to backend functionalities. My team uses SlackBots to automate common tasks and to provide non-technical teammates with access to self-serve utilities. **Serverless architectures** are generally easier to set up, easier to maintain, and cost less than traditional servers for sporadic use cases. In short, serverless architecture is a great fit for the irregular usage of our SlackBots.
+**Slack Bots** provide a great entry point to backend functionalities. My team uses SlackBots to automate common tasks and to provide non-technical teammates with access to self-serve utilities. **Serverless architectures** are generally easier to set up, easier to maintain, and cost less than traditional servers for sporadic use cases. In short, serverless architecture is a great fit for the irregular usage of our Slack Bots.
 
-My initial research into serverless-based SlackBots did not yield a lot of examples. In fact, much of Slack's API documentation seems to assume that the developer is running a traditional server. Stubborn developer that I am, I insisted on a fully serverless implementation anyway. This article describes the architecture that we landed upon, its quirks and shortcomings. In a future article I hope to share more of the application code.
+My initial research into serverless-based Slack Bots did not yield a lot of examples. In fact, much of Slack's API documentation seems to assume that the developer is running a traditional server. Stubborn developer that I am, I insisted on a fully serverless implementation anyway. This article describes the architecture that we landed upon, its quirks and shortcomings. In a future article I hope to share more of the application code.
 
+> In this article, the terms Slack Bot and Slack App are used interchangeably. Technically, [everything is a Slack App](https://api.slack.com/bot-users#:~:text=A%20bot%20is%20a%20type,a%20Slack%20App%20can%20do.). But "Bots" are chic and cool and hip, man, and I'm no jive turkey.
 ## Requirements
 
 The solution must abide by the following requirements and constraints:
@@ -72,7 +25,7 @@ In either case, required application does not run in Slack itself. The slash com
 
 The sequence diagram below describes an extensible architecture for ingesting Slack slash commands.
 
-Slash Command Architecture Overview
+**Slash Command Architecture Overview**
 ![Ingest Command](https://www.websequencediagrams.com/files/render?link=FI3jamI7wMqnDperlGPIvmLY4yt8EjMfNO9hyssLtmln1h7UHhARdiv82O17AaDQ)
 
 ### Slack
@@ -95,14 +48,14 @@ However, Slack has some quirks that the controller lambda is also responsible fo
 
 Therefore, as described in the diagram above, the controller lambda should send an immediate `200` response as soon as basic validations take place and before the workload is forwarded. This can be accompanied by a basic message to inform the user to hang out while the workload is assigned and processed. 
 
-Some example helpful messages:
-* _Okay! Working on it, boss..._
-* _Message received! Spinning up the hamster wheels..._
-* _Roger that. Too close of missiles, switching to guns._
+> Some example helpful messages:
+> * _Okay! Working on it, boss..._
+> * _Message received! Spinning up the hamster wheels..._
+> * _Roger that. Too close of missiles, switching to guns._  
+>
+> Really anything to let the user know how much you care.
 
-Really anything to let the user know how much you care.
-
-> It depends on your use case, but it is probably not necessary for the controller lambda to wait for worker lambda to finish its workload. The controller lambda's execution generally can end after it fowards the payload.
+It depends on your use case, but it is probably not necessary for the controller lambda to wait for worker lambda to finish its workload. The controller lambda's execution generally can end after it fowards the payload.
 
 ### Worker Lambda(s)
 
@@ -114,4 +67,15 @@ If you wanted to completely isolate the worker lambda from any Slack-ification (
 
 ## Step Two: Add an Interaction
 
-![Ingest Command and Interaction](https://www.websequencediagrams.com/files/render?link=SnylH6eIgROqIuY8bUiUadG1IvOmYbPij1SyMGKwXzoMjbTVT81sOo4uHuzrn116)
+A Slack Interaction provides a friendly UX for Slack App user inputs. For example, you've trained your business users to use `/create-order` to create their own test data; now you want them to update the order themselves instead of asking you to POST updates to the test environment. Interactions to the rescue!
+
+In this example, an order can be `COMPLETED` or `CANCELLED`; under the hood, your service simply patches an `order` resource to `status: 'COMPLETED'` or `status: 'CANCELLED'`. You want to provide these options to your business user as simple buttons after an order is created.
+
+**Interaction Architecture Overview**
+[Ingest Command and Interaction](https://www.websequencediagrams.com/files/render?link=SnylH6eIgROqIuY8bUiUadG1IvOmYbPij1SyMGKwXzoMjbTVT81sOo4uHuzrn116)
+
+As before, initiate the SlackBot with the slash command, `/create-order`. This time, however, the worker lambda is additionally responsible for [constructing an Interaction config](https://api.slack.com/messaging/interactivity) and sending it back to the channel whence it came. There are a number of interaction types and Slack provides [Block Kit Builder](https://api.slack.com/block-kit), a playground for designing them.
+
+> Regardless of the Block Kit Builder, I've found the developer APIs for creating and interacting with Slack Interactions to be awful. I will summarize some pain points below. Your mileage may vary.
+
+Provided that you are able to send an interaction back to the initiating user, you must have some means by which to ingest the subsequent user input. 
