@@ -413,6 +413,7 @@
     - Can only toggle between Dedicated mode and Host mode; cannot be changed from or to Default mode (shared tenancy)
 - Assign an IAM Role (i.e. limit permitted actions) to an EC2 in order to lock down blast radius from security breach.
 - Metadata about an instance is available; can get info about an instance (such as its public ip or the user data script).
+- TODO: pricing; fefects of reboots
 
 
 ### Instance Types
@@ -433,8 +434,10 @@
 ### Security Groups
 
 - Security Groups operate at the instance level, they support "allow" rules only, and they evaluate all rules before deciding whether to allow traffic.
-- All Inbound Traffic is blocked by default.
-- All Outbound Traffic is allowed by default.
+- Default security group settings
+  - All Inbound Traffic is blocked by default.
+  - All Outbound Traffic is allowed by default.
+  - Instances in group can talk to one another.
 - Changes to Security Groups take effect immediately.
 - A Security Group can contain any number of EC2 instances.
 - Multiple Security Groups can be attached to an EC2 instance.
@@ -459,6 +462,7 @@
   - No data loss on reboot.
   - No means to preserve on instance termination.
   - Use case: An instance store provides temporary block-level storage for your instance. This storage is located on disks that are physically attached to the host computer. **Instance store is ideal for temporary storage of information that changes frequently, such as buffers, caches, scratch data, and other temporary content, or for data that is replicated across a fleet of instances, such as a load-balanced pool of web servers.**
+- AMI can be created from a running instance **ONLY if "no reboot"** option is selected.
 
 ### ENI vs ENA vs EFA
 
@@ -500,6 +504,7 @@
     - **Lowest Price**: spot instances come from the pool with the lowest price. (**Default**)
       - InstancePoolstoUseCount: spot instances are distributed across the number of spot instance pools you specify. This parameter is valid only when used with Lowest Price.
     - **Diversified**: spot instances are distributed across all pools.
+- TODO: minimum cost
 
 ### EC2 Hibernate
 
@@ -541,6 +546,7 @@
 
 - EBS is used to create storage volumes and attach them to an EC2 instance. Once attached, you can (1) create a file system on top of the volume, (2) run a database, or (3) use it in any way you would use a normal block device.
 - EBS volumes live in a specific AZ but are automatically replicated to protect against single component failure.
+- Can only attach one EBS per EC2 instance (not shareable).
 
 ### Volume Types
 
@@ -554,6 +560,8 @@
 ### Snapshots
 
 - A snapshot is a static copy of an EBS volume.
+  - If you make periodic snapshots of a volume, the snapshots are incremental which means only the blocks on the device that have changed after your last snapshot are saved in the new snapshot. 
+  - Even though snapshots are saved incrementally, the snapshot deletion process is designed such that you need to retain only the most recent snapshot in order to restore the volume.
 - In order to snapshot a root device EBS volume, best practice is to stop the instance first. However, a snapshot _can_ be taken from a running instance.
 - Users can create AMI's from EBS-backed instances and snapshots.
 - Users can change EBS volumes on the fly, including both size and storage type.
@@ -612,6 +620,9 @@
 ### General
 
 - A physical or virtual device that balances load across multiple servers.
+- **Two main components**: the load balancers and the controller service. 
+  - The **load balancers** monitor the traffic and handle requests that come in through the Internet. 
+  - The **controller service** monitors the load balancers, adding and removing load balancers as needed and verifying that the load balancers are functioning properly.
 - Three types: (1) Application (ALB); (2) Network (NLB); (3) Classic (CLB)
 - **Application**: best suited for load balancing HTTP and HTTPS traffic. ALBs operate at [Layer 7](https://www.techopedia.com/definition/20338/layer-7#:~:text=Layer%207%20refers%20to%20the,end%2Duser%20processes%20and%20applications.) (application layer) and are application-aware. ALBs can have advanced request routing that sends specified requests to specific web servers.  
   - Load balancer could be user-preference aware to change e.g. language or currency.
@@ -622,6 +633,7 @@
 - **X-Forwarded-For**: A load balancer forwards requests, but from the ELB's private IP. If you need the IPv4 address of an end user, look at the X-Forwarded-For header.
 - **Healthchecks**: generally a simple ping to see if a 200-level response is received. Instances monitored by an ELB are either **InService** or **OutofService**.
 - CLBs and ALBs only provide DNS name, never an IP address. By contrast you **can** get a static IP for an NLB.
+- No cross-region load balancing
 
 ### Advanced Load Balancer Theory
 
@@ -1186,6 +1198,7 @@ while NAT(s) Gateway allow instances with no public IPs to access the internet.
 - When **blocking specific IP addresses**, use NACL not security group.
 - NACL to subnet relationship is 1:many, but subnet to NACL relationship is 1:1.
 - NACLs are stateless
+- TODO: Outbound ports...
 
 ### AWS Global Accelerator
 
@@ -1366,6 +1379,8 @@ while NAT(s) Gateway allow instances with no public IPs to access the internet.
 - Supports everything CloudFormation supports (is a Super Set of CF).
 - Can run serverless applications locally with SAM Local (lambda only) with Docker.
 - Can package and deploy with Code Deploy
+- Trivia
+  - List Stacks command enables you to get a list of any of the stacks you have created (even those which have been **deleted up to 90 days**). You can use an option to filter results by stack status, such as CREATE_COMPLETE and DELETE_COMPLETE. The AWS CloudFormation list-stacks command returns summary information about any of the running or deleted stacks, including the name, stack identifier, template, and status.
 
 ### Elastic Container Service (ECS)
 - Containers
@@ -1422,3 +1437,7 @@ while NAT(s) Gateway allow instances with no public IPs to access the internet.
 ### Hypervisors
 
 ### Opsworks
+
+### Amazon FPS & Amazon DevPay
+- Using Amazon **Flexible Payments Service** (Amazon FPS), developers can accept payments on websites. It has several innovative features, including support for micropayments.
+- Amazon **DevPay** instruments two Amazon Web Services to enable a new sort of Software as a Service. Amazon DevPay supports applications built on Amazon S3 or Amazon EC2 by allowing you to resell applications built on top of one of these services. You determine the retail price, which is a mark-up above Amazons base price. Customers pay for your application by paying Amazon. We deduct the base price plus a small commission; then deposit the rest into your Amazon account.

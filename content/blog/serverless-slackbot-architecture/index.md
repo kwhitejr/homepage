@@ -67,15 +67,41 @@ If you wanted to completely isolate the worker lambda from any Slack-ification (
 
 ## Step Two: Add an Interaction
 
-A Slack Interaction provides a friendly UX for Slack App user inputs. For example, you've trained your business users to use `/create-order` to create their own test data; now you want them to update the order themselves instead of asking you to POST updates to the test environment. Interactions to the rescue!
+A Slack Interaction provides a friendly UX for Slack App user inputs. For example, you've trained your business users to use `/create-order` to create their own test data; now you want them to update the order state themselves (e.g. complete an order) instead of asking you to manually POST updates to the test environment. Slack Interactions to the rescue!
 
-In this example, an order can be `COMPLETED` or `CANCELLED`; under the hood, your service simply patches an `order` resource to `status: 'COMPLETED'` or `status: 'CANCELLED'`. You want to provide these options to your business user as simple buttons after an order is created.
+In this example, an order can be `COMPLETED` or `CANCELLED`; under the hood, your service simply patches an `order` resource to `status: 'COMPLETED'` or `status: 'CANCELLED'`. You want to provide these options to your business user with a simple button interface after an order is created.
 
 **Interaction Architecture Overview**
-[Ingest Command and Interaction](https://www.websequencediagrams.com/files/render?link=SnylH6eIgROqIuY8bUiUadG1IvOmYbPij1SyMGKwXzoMjbTVT81sOo4uHuzrn116)
+![Ingest Command and Interaction](https://www.websequencediagrams.com/files/render?link=SnylH6eIgROqIuY8bUiUadG1IvOmYbPij1SyMGKwXzoMjbTVT81sOo4uHuzrn116)
 
 As before, initiate the SlackBot with the slash command, `/create-order`. This time, however, the worker lambda is additionally responsible for [constructing an Interaction config](https://api.slack.com/messaging/interactivity) and sending it back to the channel whence it came. There are a number of interaction types and Slack provides [Block Kit Builder](https://api.slack.com/block-kit), a playground for designing them.
 
 > Regardless of the Block Kit Builder, I've found the developer APIs for creating and interacting with Slack Interactions to be awful. I will summarize some pain points below. Your mileage may vary.
 
-Provided that you are able to send an interaction back to the initiating user, you must have some means by which to ingest the subsequent user input. 
+Next, after you send an interaction back to the initiating user, there must be some means by which your application can ingest the subsequent user input. Every Slack App can optionally configure an Interaction `Request URL`. From the Slack App dashboard, enable interactivity and configure the `Request URL` with your API Gateway. Slack will send an HTTP POST request with information to this URL when users interact with a shortcut or interactive component.
+
+Per the infrastructure diagram, I use the same API Gateway to ingest requests for slash commands and interactions, but have configured different paths (`/commands` and `/interactions`, respectively) for each callback type.
+
+Once interaction payloads are flowing into API Gateway, the setup is very much the same as for slash commands: a controller lambda provides initial checks and routes the interaction payload to the appropriate worker, and the worker lambda performs the work defined in the interaction payload. In our example... 
+1. the user clicks either the `COMPLETE` or `CANCEL` button, 
+1. this interaction payload is delivered via API Gateway to the interaction controller lambda,
+1. the interaction controller lambda inspects the payload and routes it to the appropriate worker lambda (i.e. an Update Order Worker),
+1. the worker lambda patches the order to `COMPLETED` or `CANCELLED`, then posts a success message back to Slack.
+
+## Potential Improvements
+
+1. Decouple controller and worker lambdas with SNS or SQS. The result would be that the worker lambda **must** take ownership of communicating results back to Slack.
+1. Eliminate slash command controller lambda entirely by linking a more detailed API Gateway path (e.g. `/commands/create-order`) directly to the relevant worker lambda. Similar to decoupling, this setup forces the worker lambda to both send the synchronous response and communicate final results back to Slack.
+1. Conversely, enforce that the controller lambdas are the sole interface with Slack so that worker lambdas can isolate their single responsibility. This would allow workers to interface with other triggers, not just Slack. 
+
+## Pain Points
+
+Through this article I've alluded to some pain points that I found working with Slack developer APIs. Some of these may be due to my own ignorance.
+1. **Manual set-up steps**. So far as I can tell, there is no way to avoid manually configuring slash command endpoints and an interactivity endpoint via the Slack App console. Which is to say, this infrastructure can never be fully automated (e.g. with Terraform) because you are forced into the console to configure these data points. _I would love to be wrong about this_.
+1. **Capability inconsistencies**. A slack app can have any number of slash command URLs, but can only have one interaction URL. It is like they had the foresight to understand that developers would want to point different commands at different backends, but somehow missed the same logic for interaction inputs. _I would love to understand more about this._
+1. **Interaction payloads**. Maybe the worst part of trying to implement interactivity is handling the interaction payloads. There are three interaction types: Messages, Home Tab, and Modals. Their payloads have different schema and their callbacks fire at different times. For example, let's say you want to collect a couple user inputs and then send a single payload -- you know, a classic form. Message Interactions support forms; every input fires the callback. Modals do support forms... so if you want to receive an aggregate user input payload (as you probably must in a serverless context), you are forced to use Modals. Modals, meanwhile, are implemented with an awkward API that does not even retain the channel id it came from (whereas it is always baked into a Message payload). 
+1. **Slack developer documentation is a hot mess**. For any given question you have about how to use Slack's developer APIs, there are probably three or seven official pages claiming to answer your question, they all cross-reference each other, and none of them really gets to the heart of your problem (I challenge you to look up how to build a Slack Interaction and come away with reasonable answer). There is no repository of curated infrastructure templates to help you set up on AWS, Azure, or wherever (and hence this article came to be). Most tellingly of all, [Slack's official documentation](https://api.slack.com/) is bifurcated from its [GitHub presence](https://github.com/slackapi/node-slack-sdk), and so it is that much harder to connect the dots when explanations do not add up (or open issues to rectify the documentation).
+
+## Conclusion
+
+Slack does not make it easy to build out any Apps, and less so on serverless infrastructure, but if you bang your head on it long enough you can build some really useful functionality. My team has dramatically decreased its hand-holding overhead by giving our business user teammates easy-to-use self-service tools. I hope to follow up the architecture described in this article with a sample implementation sometime soon!
