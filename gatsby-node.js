@@ -24,6 +24,7 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
             frontmatter {
               title
               tags
+              status
             }
           }
         }
@@ -119,6 +120,7 @@ exports.createSchemaCustomization = ({ actions }) => {
       description: String
       date: Date @dateformat
       tags: [String!]
+      status: String!
     }
 
     type Fields {
