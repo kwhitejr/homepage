@@ -1,9 +1,16 @@
+---
+title: Modal Component for Enterprise
+date: "2021-XX-XX"
+description: "Build an enterprise-level production-ready modal functionality from the ground up."
+status: DRAFT
+---
+
 # Modal Component
-### Build enterprise-level production-ready modal functionality from the ground up.  
+### Build an enterprise-level production-ready modal functionality from the ground up.
 
 ## Motivation
-Modal is one of those components that seems fairly straightforward: hide this thing until I want to see it,  overlay it on top of the screen when I do. Basic `if`/`else` stuff.  
-Once you begin digging in, however, you find yourself surrounded by murky questions...  
+Modal is one of those components that seems fairly straightforward: hide this thing until I want to see it, then overlay it on top of the screen when I do. Basic `if`/`else` stuff.
+Once you begin digging in, however, you find yourself surrounded by murky questions...
 * What happens when two modals want to be open? _How do I manage state?_
 * How do I ensure that the modal behavior meets accessibility requirements? _What are those requirements, anyhow?_
 * How is a `modal` different from a `dialog`? Is there a difference? _But why?_
@@ -11,7 +18,7 @@ Once you begin digging in, however, you find yourself surrounded by murky questi
 This article seeks to answer those questions and more. First, I will provide a brief overview of modals and then outline the desirable feature set and accessibility requirements. Second, I will provide an annotated sample implementation. Let's dive in!
 
 ## Modals: A Brief Overview
-Before we can dive into solutioning, we need to better understand the problem space. Let's start with the basics: _what is a modal?_  
+Before we can dive into solutioning, we need to better understand the problem space. Let's start with the basics: _what is a modal?_
 
 ### Nomenclature
 To keep the subsequent discussion clear, this article uses the following defined terms:
@@ -22,14 +29,14 @@ To keep the subsequent discussion clear, this article uses the following defined
 * **Tray**: like a Drawer, but transitions in from the bottom.
 * **Overlay**: any part of the screen that is not interactive when a Modal is active; commonly characterized by a faded look and deactivates the active Modal if clicked. Sometimes referred to as "Scrim" or "Background".
 * **Not a modal**: tooltips, toasts, any element that does not abide by the features and accessibility guidelines enumerated below.
-* **Control Node**: a node or element on the page that opens a Modal if clicked (or otherwise interacted with). 
+* **Control Node**: a node or element on the page that opens a Modal if clicked (or otherwise interacted with).
 
 Some common examples of modal usage are (1) cookie warnings (frequently as a tray); (2) federated authentication login (usually as a dialog); (3) exit intent pop ups (hot garbage please stop).
 
 The takeaway is that **modal describes behavior** whereas dialog, drawer, and others are **stylized implementations** of that behavior. This article references modal as a behavioral **wrapper** and dialogs (and etc.) as modal **content**.
 
 ### Features
-To be honest, I do not know a "definitive feature set" reference for modals. Most developers seem to agree on the core features, maybe out of consensus or maybe out of common sense, but there is some fuzziness around the edges. This article adheres to the following feature guidelines while acknowledging your particular requirements may vary...  
+To be honest, I do not know a "definitive feature set" reference for modals. Most developers seem to agree on the core features, maybe out of consensus or maybe out of common sense, but there is some fuzziness around the edges. This article adheres to the following feature guidelines while acknowledging your particular requirements may vary...
 * The web application **must** enforce that only one modal be active at a time.
 * When a modal is open, focus **must** be moved to the content of that modal. Where focus is initially placed may vary depending on the content.
 * An open modal **must not** trap the user; i.e., the user must have some means by which to close the modal.

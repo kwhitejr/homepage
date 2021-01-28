@@ -1,6 +1,12 @@
- # Serverless SlackBot Architecture
+---
+title: Serverless SlackBot Architecture
+date: "2021-01-26"
+description: "Slack Bots provide a great entry point to backend functionalities. For sporadic use cases, serverless architectures are easy to set up, easy to maintain, and generally cost less than traditional servers."
+status: PUBLISHED
+---
+# Serverless SlackBot Architecture
 
-## Motivation 
+## Motivation
 
 **Slack Bots** provide a great entry point to backend functionalities. My team uses SlackBots to automate common tasks and to provide non-technical teammates with access to self-serve utilities. **Serverless architectures** are generally easier to set up, easier to maintain, and cost less than traditional servers for sporadic use cases. In short, serverless architecture is a great fit for the irregular usage of our Slack Bots.
 
@@ -46,12 +52,12 @@ The main job of the slash command controller lambda is to redirect the command p
 
 However, Slack has some quirks that the controller lambda is also responsible for resolving. The main issue is the 3 second timeout; if the slash command does not receive _some_ response within 3 seconds, then the request times out and is treated as a failure.
 
-Therefore, as described in the diagram above, the controller lambda should send an immediate `200` response as soon as basic validations take place and before the workload is forwarded. This can be accompanied by a basic message to inform the user to hang out while the workload is assigned and processed. 
+Therefore, as described in the diagram above, the controller lambda should send an immediate `200` response as soon as basic validations take place and before the workload is forwarded. This can be accompanied by a basic message to inform the user to hang out while the workload is assigned and processed.
 
 > Some example helpful messages:
 > * _Okay! Working on it, boss..._
 > * _Message received! Spinning up the hamster wheels..._
-> * _Roger that. Too close of missiles, switching to guns._  
+> * _Roger that. Too close of missiles, switching to guns._
 >
 > Really anything to let the user know how much you care.
 
@@ -61,7 +67,7 @@ It depends on your use case, but it is probably not necessary for the controller
 
 The content of the worker lambda is really up to you; this is where your feature logic lives. This lambda has two jobs: (1) do the work; and (2) send response to the user.
 
-In theory, it need not be a single lambda, or even a lambda at all! Could be a Step Function or any number of async processes. It's main job to perform the requested work. 
+In theory, it need not be a single lambda, or even a lambda at all! Could be a Step Function or any number of async processes. It's main job to perform the requested work.
 
 If you wanted to completely isolate the worker lambda from any Slack-ification (and that's not a terrible idea), you could have the controller lambda wait for the workload result and send the response back to Slack. This would have the extremely positive benefit of allowing the worker lambda to interface with main input channels, not just Slack! The downside is that you'll have a potentially long-lived controller lambda execution while it waits for the workload to finish. In short, your mileage may vary!
 
@@ -82,8 +88,8 @@ Next, after you send an interaction back to the initiating user, there must be s
 
 Per the infrastructure diagram, I use the same API Gateway to ingest requests for slash commands and interactions, but have configured different paths (`/commands` and `/interactions`, respectively) for each callback type.
 
-Once interaction payloads are flowing into API Gateway, the setup is very much the same as for slash commands: a controller lambda provides initial checks and routes the interaction payload to the appropriate worker, and the worker lambda performs the work defined in the interaction payload. In our example... 
-1. the user clicks either the `COMPLETE` or `CANCEL` button, 
+Once interaction payloads are flowing into API Gateway, the setup is very much the same as for slash commands: a controller lambda provides initial checks and routes the interaction payload to the appropriate worker, and the worker lambda performs the work defined in the interaction payload. In our example...
+1. the user clicks either the `COMPLETE` or `CANCEL` button,
 1. this interaction payload is delivered via API Gateway to the interaction controller lambda,
 1. the interaction controller lambda inspects the payload and routes it to the appropriate worker lambda (i.e. an Update Order Worker),
 1. the worker lambda patches the order to `COMPLETED` or `CANCELLED`, then posts a success message back to Slack.
@@ -92,14 +98,14 @@ Once interaction payloads are flowing into API Gateway, the setup is very much t
 
 1. Decouple controller and worker lambdas with SNS or SQS. The result would be that the worker lambda **must** take ownership of communicating results back to Slack.
 1. Eliminate slash command controller lambda entirely by linking a more detailed API Gateway path (e.g. `/commands/create-order`) directly to the relevant worker lambda. Similar to decoupling, this setup forces the worker lambda to both send the synchronous response and communicate final results back to Slack.
-1. Conversely, enforce that the controller lambdas are the sole interface with Slack so that worker lambdas can isolate their single responsibility. This would allow workers to interface with other triggers, not just Slack. 
+1. Conversely, enforce that the controller lambdas are the sole interface with Slack so that worker lambdas can isolate their single responsibility. This would allow workers to interface with other triggers, not just Slack.
 
 ## Pain Points
 
 Through this article I've alluded to some pain points that I found working with Slack developer APIs. Some of these may be due to my own ignorance.
 1. **Manual set-up steps**. So far as I can tell, there is no way to avoid manually configuring slash command endpoints and an interactivity endpoint via the Slack App console. Which is to say, this infrastructure can never be fully automated (e.g. with Terraform) because you are forced into the console to configure these data points. _I would love to be wrong about this_.
 1. **Capability inconsistencies**. A slack app can have any number of slash command URLs, but can only have one interaction URL. It is like they had the foresight to understand that developers would want to point different commands at different backends, but somehow missed the same logic for interaction inputs. _I would love to understand more about this._
-1. **Interaction payloads**. Maybe the worst part of trying to implement interactivity is handling the interaction payloads. There are three interaction types: Messages, Home Tab, and Modals. Their payloads have different schema and their callbacks fire at different times. For example, let's say you want to collect a couple user inputs and then send a single payload -- you know, a classic form. Message Interactions support forms; every input fires the callback. Modals do support forms... so if you want to receive an aggregate user input payload (as you probably must in a serverless context), you are forced to use Modals. Modals, meanwhile, are implemented with an awkward API that does not even retain the channel id it came from (whereas it is always baked into a Message payload). 
+1. **Interaction payloads**. Maybe the worst part of trying to implement interactivity is handling the interaction payloads. There are three interaction types: Messages, Home Tab, and Modals. Their payloads have different schema and their callbacks fire at different times. For example, let's say you want to collect a couple user inputs and then send a single payload -- you know, a classic form. Message Interactions support forms; every input fires the callback. Modals do support forms... so if you want to receive an aggregate user input payload (as you probably must in a serverless context), you are forced to use Modals. Modals, meanwhile, are implemented with an awkward API that does not even retain the channel id it came from (whereas it is always baked into a Message payload).
 1. **Slack developer documentation is a hot mess**. For any given question you have about how to use Slack's developer APIs, there are probably three or seven official pages claiming to answer your question, they all cross-reference each other, and none of them really gets to the heart of your problem (I challenge you to look up how to build a Slack Interaction and come away with reasonable answer). There is no repository of curated infrastructure templates to help you set up on AWS, Azure, or wherever (and hence this article came to be). Most tellingly of all, [Slack's official documentation](https://api.slack.com/) is bifurcated from its [GitHub presence](https://github.com/slackapi/node-slack-sdk), and so it is that much harder to connect the dots when explanations do not add up (or open issues to rectify the documentation).
 
 ## Conclusion
