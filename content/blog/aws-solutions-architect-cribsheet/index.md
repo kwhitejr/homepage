@@ -36,10 +36,14 @@ tags: ['AWS']
 
 - IAM resources are universal; they are not tied to specific regions.
 - The **Root** account is created for every new AWS account and has full admin access (dangerous).
+  - Root users can perform all actions related to IAM.
+  - Root is needed for very privileged access; in this case, that’s **creating a CloudFront key pair**, which essentially provides signed access to applications and is a very trusted action.
 - General AWS protocol is to provide the least permissions.
 - All subsequent users are created with no access, and so must be assigned Roles and/or Policies to become useful.
 - New users are assigned (1) an Access Key ID; and (2) Secret Access Keys when first created. Store these safely as they cannot be viewed again from AWS console. These credentials can be used for programmatic (CLI) access to AWS.
 - Always set up MFA for the root user of a new account because duh.
+- Power user access is a predefined policy that allows access to all AWS services with the exception of group or user management within IAM.
+- Power users can work with managed services, but they cannot create (or otherwise manage) IAM users.
 
 ### Policies
 
@@ -162,16 +166,29 @@ tags: ['AWS']
 - S3 provides (1) tiered storage; (2) lifecycle management; (3) versioning; and (4) encryption, as additional services.
 - Access can be provided at the bucket-level (via **Bucket Policies**) or object-level (via **Access Control Lists**).
 - **S3 Reduced Redundancy Service** (RRS): deprecated service similar to S3 One Zone IA.
+- While S3 does use availability zones to store objects in buckets, **you do not choose the availability zone yourself**. Even S3 One Zone-IA does not allow you to specify the AZ for use.
+- Example URLs
+  - Default: `s3-us-west-2.amazonaws.com/bucketname/path`
+  - US East 1: buckets in US East are a special case and should use the special, unique endpoint `s3.amazonaws.com`
+  - Static Website: `bucket-name.s3-website-Region.amazonaws.com`
+  - Virtual Host: `bucket.s3-aws-region.amazonaws.com`
+- S3 supports two styles of bucket URLs: **virtual-hosted-style** and **path-style** URLs. Virtual-hosted-style URLs are of the form `http://bucket.s3-aws-region.amazonaws.com`, and path-style URLs are the traditional URLs you’ve seen: `https://s3-aws-region.amazonaws.com/bucket-name`.
+- Every S3 object has a key, a value, and a version ID.
 
 ### Data Consistency Model
 
-- Read-after-write Consistency for PUTs of new objects.
-- Eventual Consistency for overwrite PUTs and DELETEs (can take time to propagate).
+- **Read-after-write Consistency** for PUTs of new objects.
+- **Eventual Consistency** for overwrite PUTs and DELETEs (can take time to propagate).
 
 ### Service Level Agreement (SLA)
 
-- 99.99% guaranteed **availability** (four 9's) --> the data is accessible.
-- Eleven 9's guaranteed **durability** --> the data won't be deleted.
+- **Availability** --> data is accessible
+  - **S3**: four 9's **99.99%**
+  - **S3 IA**: three 9's **99.9%**
+  - **S3 One Zone-IA**: **99.5%**
+  - **Glacier**: N/A
+- **Durability**: Eleven 9's guaranteed --> the data won't be deleted.
+- **Take-away**: same durability, different availability.
 
 ### Storage Tiers
 
@@ -187,6 +204,7 @@ tags: ['AWS']
 
 - Designed for data that is infrequently accessed, but requires rapid access when needed.
 - Lower base fee than S3, but charged for data retrieval.
+  - S3-IA charges **all objects as if they are at least 128 KB in size**. So while you can store a smaller object in S3-IA, it will be considered 128 KB for pricing and charging purposes.
 - Same redundancies as S3 Standard.
 
 #### S3 One Zone IA
@@ -236,6 +254,12 @@ tags: ['AWS']
 - Once enabled, stores all versions of an object (includes all writes, including deletes).
 - Integrates with Lifecycle Management, e.g.
 - Deletes are denoted by a delete flag.
+- Each object in S3 has a name, value (data), version ID, and metadata. The version history of an object won’t exist unless versioning is turned on.
+
+### MFA Delete
+
+- MFA Delete applies to deleting objects, not buckets. It affects changing the versioning state of a bucket or permanently deleting any object (or a version of that object). 
+- **Only the root account** can enable MFA Delete. Even the console user that created the bucket—if it isn’t the root user—cannot enable MFA Delete on a bucket.
 
 ### Cross Region Replication
 
@@ -340,9 +364,12 @@ tags: ['AWS']
 
 - Storage Gateway is a virtual machine image that can be installed on a host in your data center. Once installed and associated with an AWS account, the gateway can be configured and provides a direct line into AWS.
 - The Storage Gateway service is primarily used for attaching infrastructure located in a Data centre or office to the AWS Storage infrastructure. The AWS documentation states that; "You can think of a file gateway as a file system mount on S3."
+- AWS storage gateway is a virtual appliance that allows on-premises sites to interact with S3 while still caching (in certain configurations) data locally.
+- AWS storage gateway is a virtual appliance and is not available as a hardware appliance.
 
 ### Storage Gateway Types
 
+- Gateway types are File or Volume
 - **File Gateway**: store flat files in S3.
   - File Gateway enables you to store and retrieve objects in Amazon S3 using file protocols, such as Network File System (NFS). Objects written through File Gateway can be directly accessed in S3.
   - Use cases for File Gateway include:
@@ -351,9 +378,10 @@ tags: ['AWS']
     - (c) Hybrid cloud workflows using data generated by on-premises applications for processing by AWS services such as machine learning, big data analytics or serverless functions.
   - File Gateway volumes retain a copy of frequently accessed data subsets locally.
 - **[Volumes Gateway](https://aws.amazon.com/storagegateway/volume/)** (iSCSI): The volume gateway provides block storage to your applications using the [iSCSI protocol](https://en.wikipedia.org/wiki/ISCSI). Data on the volumes is stored in Amazon S3. To access your iSCSI volumes in AWS, you can take EBS snapshots which can be used to create EBS volumes. The snapshots capture the incremental changes to save space.
-- **Stored Volumes**: store files on premise, back up to AWS.
-- **Cached Volumes**: only store recently accessed data on premise, back up everything else to AWS. Helps minimize the need to scale at the local data center, while still providing low latency to frequently accessed data.
-- **Tape Gateway** (VTL): The tape gateway provides your backup application with an iSCSI virtual tape library (VTL) interface, consisting of a virtual media changer, virtual tape drives, and virtual tapes. Virtual tape data is stored in Amazon S3 or can be archived to Amazon Glacier.
+  - **Stored Volumes**: store files on premise, back up to AWS.
+    - All data is backed up to S3 **asynchronously when a stored volume is used**. This ensures that no lag is incurred by clients that interact with the stored volumes on-site.
+  - **Cached Volumes**: only store recently accessed data on premise, back up everything else to AWS. Helps minimize the need to scale at the local data center, while still providing low latency to frequently accessed data.
+  - **Tape Gateway** (VTL): The tape gateway provides your backup application with an iSCSI virtual tape library (VTL) interface, consisting of a virtual media changer, virtual tape drives, and virtual tapes. Virtual tape data is stored in Amazon S3 or can be archived to Amazon Glacier.
 
 ### General - Snowball
 
@@ -378,8 +406,18 @@ tags: ['AWS']
   - Edge Locations support **both read and write** operations. If write, then changes are replicated back to Origin.
 - **Origin**: The origin of all the files that the CDN will distribute, e.g. an S3 bucket, an EC2 instance, an ELB, or Route53.
 - **Distribution**: The name of your CDN.
+  - CloudFront supports both **web** distributions and **RTMP** distributions.
+  - An **RTMP distribution** is the Adobe Real-Time Messaging Protocol and is suitable for using S3 buckets as an origin server to serve streaming media.
 - Objects are cached for the Time To Live (TTL).
 - Cache can be manually cleared (an "invalidation") for a charge.
+- CloudFront is intended to cache and deliver static files from your origin servers to users or clients. Dynamic content is also servable through CloudFront from EC2 or other web servers.
+- CloudFront serves content from origin servers, usually static files and dynamic responses. These origin servers are often S3 buckets for static content and EC2 instances for dynamic content.
+- CloudFront is able to distribute content from an ELB, rather than directly interfacing with S3, and can do the same with a Route 53 recordset. These allow the content to come from multiple instances.
+- Edge locations allow objects to be written directly to them.
+- Default TTL for edge locations is 24 hours.
+- When you create a CloudFront distribution, you register a domain name for your static and dynamic content. This domain should then be used by clients.
+- There is no charge associated with data moving from any region to a CloudFront edge location.
+- The invalidation API is the fastest way to remove a file or object, although it will typically incur additional cost.
 
 ### Distribution Types
 
@@ -399,7 +437,9 @@ tags: ['AWS']
 - User cannot access origin, but can access CDN which can itself access origin.
 - Application can use AWS SDK to generate signed URL or Cookie and return it to the client. Client can then use CDN to access origin (or cache).
 - S3 can also provide **S3 Signed URLs**
-  - Presigned URL provides ability to request as the IAM user who generated the presigned URL.
+  - Presigned URL provides ability to request as the IAM user who generated the presigned URL. These credentials are associated with the URL but are not encrypted into the URL itself.
+- Presigned URLs are not tied to specific AWS services. They are simply URLs that can point at anything a normal URL can point at, except that the creator can associate permissions and a timeout with the URL.
+- A presigned URL is always configured at creation for a valid Time to Live (often referred to as TTL). This time can be very short, or quite long.
 
 
 ## Elastic Compute Cloud (EC2)
@@ -421,6 +461,7 @@ tags: ['AWS']
     - Can only toggle between Dedicated mode and Host mode; cannot be changed from or to Default mode (shared tenancy)
 - Assign an IAM Role (i.e. limit permitted actions) to an EC2 in order to lock down blast radius from security breach.
 - Metadata about an instance is available; can get info about an instance (such as its public ip or the user data script).
+  - TODO: **Certificates** are related to SSL and help define the identity of a site or transmission.
 - TODO: pricing; fefects of reboots
 
 
@@ -635,6 +676,7 @@ tags: ['AWS']
 - **Application**: best suited for load balancing HTTP and HTTPS traffic. ALBs operate at [Layer 7](https://www.techopedia.com/definition/20338/layer-7#:~:text=Layer%207%20refers%20to%20the,end%2Duser%20processes%20and%20applications.) (application layer) and are application-aware. ALBs can have advanced request routing that sends specified requests to specific web servers.
   - Load balancer could be user-preference aware to change e.g. language or currency.
   - Capable of advanced routing.
+  - ALBs are redundant across at least two subnets.
 - **Network**: best suited for load balancing TCP traffic where extreme performance is required. NLBs operate at [Layer 4](https://www.techopedia.com/definition/20335/layer-4) (network layer). NLBs are capable of handling millions of requests per second while maintaining ultra-low latencies.
 - **Classic**: legacy ELBs. Classics can load balance HTTP and HTTPS with Layer 7-specific features or can load balance on TCP with Layer 4-specific features. Not recommended anymore.
 - **504 Errors**: Gateway Timed Out because the underlying application stops or fails. Could be web server or database, not the load balancer itself. Might need to scale up or out.
@@ -667,6 +709,7 @@ tags: ['AWS']
 - Three components:
   1. **Groups**: the logical component, i.e. Webserver group, Application group, or Database group, etc.
   1. **Configuration Templates**: Groups use a launch template or a launch configuration as the configuration template for its EC2 instances. Can specify information such as AMI id, instance type, key pair, security groups, and block device mapping for instances.
+    - **Launch configurations** are concerned primarily with creating new instances while staying abstract from the details of what is on those instances.
   1. **Scaling Options**: ways to scale the ASG, such as based upon occurrence of conditions or as scheduled.
 - Scaling Options
   1. **Maintain**: periodic healthchecks ensure that specified configuration is maintained at all times. When an unhealthy instance is found, ASG terminates it and launches a new one.
@@ -802,6 +845,11 @@ tags: ['AWS']
   - Workflow Starters: events that kick off a workflow
   - Deciders: controls flow of activity tasks
   - Activity Workers: compute for tasks
+- SWF provides an API, but it is neither the AWS-specific API nor language specific. Instead, SWF supports standard HTTP requests and responses.
+- SWF is typically thought of as an asynchronous service, but it also supports synchronous tasking when needed.
+- SWF is associated with tasks and is distinct from (for example) SQS, because it **guarantees a single delivery of all tasks**.
+- SWF **tasks are assigned once and only once**.
+- A SWF **domain** is a collection of related workflows.
 
 ### SNS
 
@@ -911,6 +959,9 @@ tags: ['AWS']
 
 - **Simple Routing**: supports one record with multiple IP addresses. Route53 returns a random value (IP) to the user.
 - **Weighted Round Robin** (WRR): Weighted Round Robin allows you to assign weights to resource record sets in order to specify the frequency with which different responses are served. You may want to use this capability to do A/B testing, sending a small portion of traffic to a server on which you’ve made a software change. For instance, suppose you have two record sets associated with one DNS name—one with weight 3 and one with weight 1. In this case, 75% of the time Route 53 will return the record set with weight 3 and 25% of the time Route 53 will return the record set with weight 1. Weights can be any number between 0 and 255.
+  - Weights are simply integers that can be summed to determine an overall weight and the fractional weights of each resource to which traffic is directed.
+  - A weight of 0 removes the resource from service in a weighted routing policy.
+  - Weighted policies do honor health checks.
 - **Latency Based Routing** (LBR): Latency Based Routing is a new feature for Amazon Route 53 that helps you improve your application’s performance for a global audience. You can run applications in multiple AWS regions and Amazon Route 53, using dozens of edge locations worldwide, will route end users to the AWS region that provides the lowest latency.
 - **Failover Routing**: used when you want to create an active/passive setup. Route53 monitors the health of the active address and if the healthcheck fails, then traffic is routed to the passive endpoint.
 - **Geolocation Routing**: traffic is routed based upon the geographic location of your end user. Geographic location is based on national boundaries. Use case: EC2s are customized for localities, e.g. with language or currency options.
@@ -932,7 +983,7 @@ tags: ['AWS']
 - Ideal for **Online Transaction Processing** (OLTP): gathering input information, processing the data and updating existing data to reflect the collected and processed information.
 - EC2 and RDS may not be able to talk unless their respective security groups are opened to each other.
 - **Backups**: two flavors, (1) Automated Backups, and (2) Database Snapshots
-  - **Automated Backup**: recover database from any point within the retention period (which is 1 to 35 days). Takes a full daily snapshot and also stores transaction logs throughout the day. When a recovery is initiated, AWS chooses the most recent daily back up, then applies the transaction logs from that day. This allows point-in-time recovery down to a second within the retention period.
+  - **Automated Backup**: recover database from any point within the retention period (which is **1 to 35 days**). Takes a full daily snapshot and also stores transaction logs throughout the day. When a recovery is initiated, AWS chooses the most recent daily back up, then applies the transaction logs from that day. This allows point-in-time recovery down to a second within the retention period.
   - Automated Backups are enabled by default. Backup data is stored in S3; user gets free storage equal to the size of the database.
   - Elevated latency during backup window (I/O may be suspended); therefore, carefully schedule the backup window.
   - By default, Automated Backups are deleted when the RDS instance is deleted.
@@ -1038,6 +1089,7 @@ tags: ['AWS']
   - Elasticache is useful in scenarios where a particular DB is under a lot of stress/load.
   - Elasticache is useful when a database is read heavy and not prone to frequent changing.
   - However, RedShift is a better answer if the DB is under stress because management is running OLAP transactions on it.
+- ElastiCache uses **shards** as a grouping mechanism for individual redis nodes. So a single node is part of a shard, which in turn is part of a cluster.
 
 ### Aurora
 
@@ -1112,6 +1164,22 @@ tags: ['AWS']
 1. Point public Subnet's custom Route Table at the Internet Gateway.
 1. Configure relevant ACL and Security Group traffic rules.
 
+### Default VPC
+![Default VPC](https://docs.aws.amazon.com/vpc/latest/userguide/images/default-vpc-diagram.png)
+AWS does the following to set it up for you:
+- Create a VPC with a size /16 IPv4 CIDR block (172.31.0.0/16). This provides up to 65,536 private IPv4 addresses.
+- Create a size /20 default subnet in each Availability Zone. This provides up to 4,096 addresses per subnet, a few of which are reserved for our use.
+- Create an internet gateway and connect it to your default VPC.
+- Add a route to the main route table that points all traffic (0.0.0.0/0) to the internet gateway.
+- Create a default security group and associate it with your default VPC.
+- Create a default network access control list (NACL) and associate it with your default VPC.
+- Associate the default DHCP options set for your AWS account with your default VPC.
+
+### Custom VPC
+- AWS automatically provides a security group, route table, and NACL for a custom VPC.
+- AWS does NOT automatically provide a default subnet or internet gateway.
+- **On Public IPs**: When you launch an instance in a **default VPC**, AWS assigns it a **public IP address by default**. When you launch an instance into a **nondefault VPC**, the subnet has an attribute that determines whether instances launched into that subnet receive a public IP address from the public IPv4 address pool. By default, **AWS don't assign a public IP address to instances launched in a nondefault subnet**.
+
 ### VPC
 
 - A VPC is the user's virtual network, hosted by AWS.
@@ -1123,13 +1191,17 @@ tags: ['AWS']
 - VPC can span multiple AZs in a single Region.
 - Main reason to create a VPC (and not use default) is granular security controls, such as public and private subnets.
 - Connecting VPC to a Datacenter
-  - **Virtual Private Gateway**: custom connection point (on VPC) for your datacenter
+![VPN HLD](https://docs.aws.amazon.com/vpn/latest/s2svpn/images/cgw-high-level.png)
+  - **Virtual Private Gateway**: the anchor on the AWS side of a site-to-site VPN connection between an on-premises site and AWS.
   - **VPN Connection**: secure tunnel from datacenter to VPC.
-  - **Customer Gateway**: a physical device or software that sits on datacenter side of connection.
+  - **Customer Gateway**: A customer gateway is the anchor on the customer side of an Amazon VPN connection. A physical device or software that sits on datacenter side of connection.
+  - **IPsec Tunnels: default 2**. A typical VPN connection uses two different tunnels for redundancy. Both tunnels move between the customer gateway and the virtual private gateway.
+  - Traffic across the Internet can only flow between public IP addresses in most cases. For a VPN connection, you will need a customer gateway with a public IP address as well as a virtual private gateway with a public IP address, both of which you may be responsible for configuring.
   - When connecting a VPN between AWS and a third party site, the Customer Gateway is created within AWS, but it contains information about the third party site e.g. the external IP address and type of routing. The Virtual Private Gateway has the information regarding the AWS side of the VPN and connects a specified VPC to the VPN.
 - There are a number of ways to set up a VPN. AWS have a standard solution that makes use of a VPC with a private subnet, Hardware VPN Access, a VPG, and an on-premise Customer Gateway.
 - Peering Connection: VPCs can talk to each other if connected from both sides. Must be within the same region. Peer connections are 1-to-1; no transitive peering (daisy chaining).
   - VPCs with overlapping CIDRs cannot be peered.
+- **Route propagation** is a routing option that automatically propagates routes to the route tables so you don’t need to manually enter VPN routes. It’s most common in a Direct Connect setup.
 - **Tenancy**: VPC can be created on (1) Default; or (2) Dedicated hardware. Performance and cost are both higher on dedicated.
   - Once a VPC is set to Dedicated hosting, it can be changed back to default hosting via the CLI, SDK or API. Note that this will not change hosting settings for existing instances, only future ones. Existing instances can be changed via CLI, SDK or API but need to be in a stopped state to do so
 - Private IP Addresses
@@ -1172,6 +1244,7 @@ tags: ['AWS']
 ### NAT Gateway
 You can use a network address translation (NAT) gateway to enable instances in a private subnet to connect to the internet or other AWS services, but prevent the internet from initiating a connection with those instances.
 - You are charged for creating and using a NAT gateway in your account. NAT gateway hourly usage and data processing rates apply. Amazon EC2 charges for data transfer also apply.
+- A NAT gateway is preferable to a NAT instance because it is managed by AWS rather than you.
 - You can associate exactly one Elastic IP address with a NAT gateway. You cannot disassociate an Elastic IP address from a NAT gateway after it's created. To use a different Elastic IP address for your NAT gateway, you must create a new NAT gateway with the required address, update your route tables, and then delete the existing NAT gateway if it's no longer required.
 - Each EC2 instance performs source/destination checks by default. This means that the instance must be the source or destination of any traffic it sends or receives. However, a NAT instance must be able to send and receive traffic when the source or destination is not itself. Therefore, you must disable source/destination checks on the NAT instance.
 - The following diagram illustrates the architecture of a VPC with a NAT gateway. The main route table sends internet traffic from the instances in the private subnet to the NAT gateway. The NAT gateway sends the traffic to the internet gateway using the NAT gateway’s Elastic IP address as the source IP address.
@@ -1233,13 +1306,14 @@ while NAT(s) Gateway allow instances with no public IPs to access the internet.
 
 - **Take-away**: access resources without going through public internet.
 - A **VPC endpoint** enables private connections between your VPC and supported AWS services and VPC endpoint services powered by AWS PrivateLink. AWS PrivateLink is a technology that enables you to privately access services by using private IP addresses. **Traffic between your VPC and the other service does not leave the Amazon network**. A VPC endpoint does not require an internet gateway, virtual private gateway, NAT device, VPN connection, or AWS Direct Connect connection. Instances in your VPC do not require public IP addresses to communicate with resources in the service.
-- VPC endpoints are virtual devices. They are horizontally scaled, redundant, and highly available VPC components. They allow communication between instances in your VPC and services without imposing availability risks.
+- VPC endpoints are **virtual devices**. They are horizontally scaled, redundant, and highly available VPC components. They allow communication between instances in your VPC and services without imposing availability risks.
 - Types
   - **Interface Endpoints**: An interface endpoint is an elastic network interface with a private IP address from the IP address range of your subnet. It serves as an entry point for traffic destined to a supported AWS service or a VPC endpoint service. Interface endpoints are powered by AWS PrivateLink.
     - Essentially, attach an ENI to allow access to supported resources.
   - **Gateway Load Balancer Endpoints**: A Gateway Load Balancer endpoint is an elastic network interface with a private IP address from the IP address range of your subnet. Gateway Load Balancer endpoints are powered by AWS PrivateLink. This type of endpoint serves as an entry point to intercept traffic and route it to a service that you've configured using Gateway Load Balancers, for example, for security inspection. You specify a Gateway Load Balancer endpoint as a target for a route in a route table. Gateway Load Balancer endpoints are supported for endpoint services that are configured for Gateway Load Balancers only.
     - The owner of the service is the service provider, and you, as the principal creating the Gateway Load Balancer endpoint, are the service consumer.
   - **Gateway Endpoints**: A gateway endpoint is for supported AWS services only. You specify a gateway endpoint as a route table target for traffic destined to **S3 or DynamoDB** only.
+  ![Gateway Endpoint](https://docs.aws.amazon.com/vpc/latest/userguide/images/vpc-endpoint-s3-diagram.png)
 
 ### VPC Private Link
 
@@ -1439,13 +1513,33 @@ while NAT(s) Gateway allow instances with no public IPs to access the internet.
 ## Other
 
 ### VPC Flow Logs
-
+- VPC Flow Logs is a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC. Flow log data can be published to Amazon CloudWatch Logs or Amazon S3. After you've created a flow log, you can retrieve and view its data in the chosen destination.
+- Flow logs can help you with a number of tasks, such as:
+  - Diagnosing overly restrictive security group rules
+  - Monitoring the traffic that is reaching your instance
+  - Determining the direction of the traffic to and from the network interfaces
+- Flow log data is collected outside of the path of your network traffic, and therefore does not affect network throughput or latency. You can create or delete flow logs without any risk of impact to network performance.
 - VPC Flow Logs can be created at the VPC, subnet, and network interface levels.
 
 ### Hypervisors
 
 ### Opsworks
+- OpsWorks is an operational management service, which AWS often classifies as “management tools” (especially in the AWS console). It allows integration with tools like Puppet and Chef.
 
 ### Amazon FPS & Amazon DevPay
 - Using Amazon **Flexible Payments Service** (Amazon FPS), developers can accept payments on websites. It has several innovative features, including support for micropayments.
 - Amazon **DevPay** instruments two Amazon Web Services to enable a new sort of Software as a Service. Amazon DevPay supports applications built on Amazon S3 or Amazon EC2 by allowing you to resell applications built on top of one of these services. You determine the retail price, which is a mark-up above Amazons base price. Customers pay for your application by paying Amazon. We deduct the base price plus a small commission; then deposit the rest into your Amazon account.
+
+### QuickSight
+- QuickSight is a cloud-powered business analytics service. It provides visualizations and analysis from multiple data sources.
+
+### Cloud9
+- Cloud9 is a developer environment, intended as an IDE for AWS developers.
+
+### Direct Connect
+- Direct Connect is an AWS service for creating a high-speed connection between an on-premises site and AWS.
+
+### AWS Shield
+- AWS Shield is a managed Distributed Denial of Service (DDoS) protection service that safeguards applications running on AWS. AWS Shield provides always-on detection and automatic inline mitigations that minimize application downtime and latency, so there is no need to engage AWS Support to benefit from DDoS protection.
+- Can be an origin for CloudFront.
+- CloudFront automatically provides AWS Shield (standard) to protect from DDoS, and it also can integrate with AWS WAF and AWS Shield advanced.
