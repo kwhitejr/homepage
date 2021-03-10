@@ -3,8 +3,8 @@ title: React Hook - useAsyncFunc
 date: "2021-03-09"
 description: "React hook for robust functionality around any async function."
 status: PUBLISHED
+tags: ["frontend", "javascript", "react"]
 ---
-# React Hook - useAsyncFunc
 [Source code](https://github.com/kwhitejr/use-async-func) and demo for generic async operation React hook. [Live example](https://codesandbox.io/s/silent-smoke-nrruh).
 
 Want to suggest an improvement? I'm all ears! Please file an issue or open a PR!

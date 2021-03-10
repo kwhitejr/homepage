@@ -3,6 +3,7 @@ title: Modal Component for Enterprise
 date: "2021-XX-XX"
 description: "Build an enterprise-level production-ready modal functionality from the ground up."
 status: DRAFT
+tags: ["frontend", "architecture", "modal"]
 ---
 
 # Modal Component

@@ -3,11 +3,8 @@ title: Crib Sheet for AWS Solutions Architect Exam
 date: "2021-01-01"
 description: "Living notes for AWS Solutions Architect exam."
 status: PUBLISHED
-tags: ['AWS']
+tags: ["aws", "architecture"]
 ---
-
-# Crib Sheet for AWS Solutions Architect Exam
-
 ## Identity and Access Management (IAM)
 
 ### Official Resources
@@ -258,7 +255,7 @@ tags: ['AWS']
 
 ### MFA Delete
 
-- MFA Delete applies to deleting objects, not buckets. It affects changing the versioning state of a bucket or permanently deleting any object (or a version of that object). 
+- MFA Delete applies to deleting objects, not buckets. It affects changing the versioning state of a bucket or permanently deleting any object (or a version of that object).
 - **Only the root account** can enable MFA Delete. Even the console user that created the bucket—if it isn’t the root user—cannot enable MFA Delete on a bucket.
 
 ### Cross Region Replication

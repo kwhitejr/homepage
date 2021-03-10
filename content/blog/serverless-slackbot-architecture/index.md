@@ -3,9 +3,8 @@ title: Serverless SlackBot Architecture
 date: "2021-01-26"
 description: "Slack Bots provide a great entry point to backend functionalities. For sporadic use cases, serverless architectures are easy to set up, easy to maintain, and generally cost less than traditional servers."
 status: PUBLISHED
+tags: ["slack", "architecture"]
 ---
-# Serverless SlackBot Architecture
-
 ## Motivation
 
 **Slack Bots** provide a great entry point to backend functionalities. My team uses SlackBots to automate common tasks and to provide non-technical teammates with access to self-serve utilities. **Serverless architectures** are generally easier to set up, easier to maintain, and cost less than traditional servers for sporadic use cases. In short, serverless architecture is a great fit for the irregular usage of our Slack Bots.
