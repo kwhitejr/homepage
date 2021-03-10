@@ -11,7 +11,7 @@ Want to suggest an improvement? I'm all ears! Please file an issue or open a PR!
 
 ## Usage
 ```jsx
-import { useAsyncFunc } from "useAsyncFunc";
+import useAsyncFunc from "useAsyncFunc";
 
 const myAsyncFunc = (arg1, arg2) => {
   // do work
