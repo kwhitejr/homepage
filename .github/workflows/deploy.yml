@@ -2,17 +2,26 @@ on:
   push:
     branches:
       - master
-name: Build Gatsby Site
+name: Build Eleventy Site
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: terraform
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Site
+        run: npm run build
+
       - name: Configure AWS credentials from Test account
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -20,41 +29,39 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-duration-seconds: 1200
           role-skip-session-tagging: true
-      - uses: hashicorp/setup-terraform@v1
+
+      - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 0.13.4
+          terraform_version: 1.5.0
           terraform_wrapper: false
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run Tests
-        run: echo 'tests shall come'
-
-      - name: Build Site
-        run: npm run build
 
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
         continue-on-error: true
+        working-directory: terraform
 
       - name: Terraform Init
         id: init
         run: terraform init -input=false
+        working-directory: terraform
 
       - name: Terraform Validate
         id: validate
         run: terraform validate
+        working-directory: terraform
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -out "planfile"
+        working-directory: terraform
 
       - name: Terraform Apply
         id: apply
         run: terraform apply -input=false planfile
+        working-directory: terraform
 
       # Finally, this is how we upload our build to our bucket
       - name: Deploy static site to S3 bucket
-        run: aws s3 sync ../public s3://$(terraform output s3_bucket) --delete
+        run: aws s3 sync ../_site s3://$(terraform output s3_bucket) --delete
+        working-directory: terraform
